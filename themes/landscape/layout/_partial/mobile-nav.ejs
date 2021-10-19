@@ -1,0 +1,13 @@
+<nav id="mobile-nav">
+  <% for (var i in theme.menu){ %>
+    <% var menu_path = theme.menu[i]; %>
+     <% if (stringStartWith(menu_path,'http')){ %>
+      <% menu_path = theme.menu[i]; %>
+    <% } else if (is_home()){ %>
+      <% menu_path = url_for(config.root + menu_path); %>
+    <% } else { %>
+      <% menu_path = url_for(menu_path); %>
+    <% } %>
+    <a href="<%- url_for(menu_path) %>" class="mobile-nav-link"><%= i %></a>
+  <% } %>
+</nav>

@@ -22,7 +22,10 @@ categories:
 找到这，基本上就已经结果很明朗了，开搞开搞~~~
 
 ## 解决办法
-> 思路：直接搞一个查询当前wins ip并更新到/etc/hosts中的脚本，每次进入shell的时候，自动执行，这样我们在wsl直接使用 自定义域名(这块我叫的是winhost)就行了。
+思路：
+- 直接搞一个查询当前wins ip并更新到/etc/hosts中的脚本
+- 每次进入shell的时候，自动执行
+- 这样我们在wsl直接使用 自定义域名(这块我叫的是winhost)就行了。
 ### 给/etc/hosts 加上写权限 (因为需要修改/etc/hosts，这个是我觉得对不好的地方，但是就是想映射自定义host, 暂时没想到别的办法)
 ```bash
 sudo chmod a+w /etc/hosts

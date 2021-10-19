@@ -8,6 +8,6 @@
     <% } else { %>
       <% menu_path = url_for(menu_path); %>
     <% } %>
-    <a href="<%- url_for(menu_path) %>" class="mobile-nav-link"><%= i %></a>
+    <a href="<%- menu_path %>" class="mobile-nav-link"><%= i %></a>
   <% } %>
 </nav>

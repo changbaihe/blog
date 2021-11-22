@@ -1,5 +1,5 @@
 ---
-title: 命令行连接mongo.md
+title: 安装使用mongosh
 date: 2021-11-18 18:11:47
 tags:
   - mongodb

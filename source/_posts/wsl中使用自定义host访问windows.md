@@ -2,14 +2,14 @@
 title: wsl中使用自定义host访问windows
 date: 2021-10-19 19:26:31
 tags:
-  - linux
-categories:
   - wsl
+categories:
+  - linux
 ---
 
 话不多说，先献祭出，wsl官方文档：[[->(*^_^*)<-](https://docs.microsoft.com/zh-cn/windows/wsl/)]，对wsl没有一个完整了解的，可以先看看官方文档，对wsl有个整体的了解。
 
-## 问题起因
+## 我与wsl的不解之缘
 
 起初没用wsl之前，wins上装了SSR代理，一切都很和平，使用了wsl之后，在wsl之中git访问github，发现好慢，这个时候自然而然的想着去找~/目录下的.gitconfig，给github配置一下socks5代理，这个时候问题就来了，wins的ip从哪来？
 

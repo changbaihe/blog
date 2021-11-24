@@ -4,7 +4,7 @@ date: 2021-10-19 19:26:31
 tags:
   - wsl
 categories:
-  - linux
+  - [os, windows]
 ---
 
 话不多说，先献祭出，wsl官方文档：[[->(*^_^*)<-](https://docs.microsoft.com/zh-cn/windows/wsl/)]，对wsl没有一个完整了解的，可以先看看官方文档，对wsl有个整体的了解。

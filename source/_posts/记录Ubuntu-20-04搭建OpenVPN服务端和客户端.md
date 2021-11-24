@@ -17,243 +17,290 @@ categories:
 ## 搭建过程 (看着↑头提到的文档)
 
 ### 安装工具包和证书生成 (假设当前是root用户)
-  - 安装openvpn 和证书工具easy-rsa
-    - apt update 
-    - apt install openvpn  // 默认目录为/etc/openvpn
-    - apt install easy-rsa
-  - 备份easy-rsa脚本 (软链接了一下当前全局的脚本，防止更新，差不多算锁版本吧)
-    - make-cadir /etc/openvpn/easy-rsa
-  - 切换到easy-rsa目录
-    - cd /etc/openvpn/easy-rsa
-  - 初始化pki目录和相关模板(/etc/openvpn/easy-rsa/pki)
-    - ./easyrsa init-pki
-  - 创建公共ca.cert (pki/ca.crt)
-    - ./easyrsa build-ca
-  - 生成dh算法参数 (pki/dh.pem)
-    - ./easyrsa gen-dh
-  - 生成server的私钥key和证书req，使用公共用ca.crt以及vars，签名生成server.crt
-    - ./easyrsa gen-req [server-name] nopass
-    - ./easyrsa sign-req server [server-name]
-  - 将server参数复制到openvpn server主目录
-    - cp pki/dh.pem pki/ca.crt pki/issued/[server-name].crt pki/private/[server-name].key /etc/openvpn/
-  - 同上，生成client私钥key和证书req，以及client.crt
-    - ./easyrsa gen-req [client-name] nopass
-    - ./easyrsa sign-req server [client-name]
-  - 创建client目录，client证书 (/etc/openvpn/client)
-    - mkdir /etc/openvpn/client
-    - cp pki/ca.crt pki/issued/[client-name].crt pki/private/[client-name].key /etc/openvpn/client
-  - 切换到etc/openvpn，生成 tls-auth的key
-    - cd etc/openvpn
-    - openvpn --genkey --secret ta.key
-  
+
+- 安装openvpn 和证书工具easy-rsa
+  ```shell
+  apt update
+  apt install easy-rsa
+  # 默认目录为/etc/openvpn
+  apt install openvpn
+  ```
+- 备份easy-rsa脚本 (软链接了一下当前全局的脚本，防止更新，差不多算锁版本吧)
+  ```shell
+  $ make-cadir /etc/openvpn/easy-rsa
+  ```
+- 初始化pki目录和相关模板和创建公共ca.cert以及dh算法参数文件
+  ```shell
+  # 切换到easy-rsa目录
+  cd /etc/openvpn/easy-rsa
+
+  # 初始化pki目录  => pki/*
+  ./easyrsa init-pki
+
+  # 创建公共ca.cert => pki/ca.crt
+  ./easyrsa build-ca
+
+  # 生成dh算法参数 => pki/dh.pem
+  ./easyrsa gen-dh
+
+  # 生成双向验证的tls-auth的key
+  openvpn --genkey --secret ta.key
+  ```
+- 生成server证书私钥，[server-name]替换成自定义name，并移至根目录/etc/openvpn
+  ```shell
+  # 生成证书req文件
+  ./easyrsa gen-req [server-name] nopass
+
+  # 使用./vars文件附带参数 和 证书请求，生成证书
+  ./easyrsa sign-req server [server-name]
+
+  # cp 证书到根目录
+  cp ta.key pki/dh.pem pki/ca.crt pki/issued/[server-name].crt pki/private/[server-name].key /etc/openvpn/
+  ```
+- 生成client证书和私钥，[client-name]替换成自定义name
+  ```shell
+  # 生成证书req文件
+  ./easyrsa gen-req [client-name] nopass
+
+  # 使用./vars文件附带参数 和 证书请求，生成证书
+  ./easyrsa sign-req server [client-name]
+
+  # 创建client文件夹
+  mkdir /etc/openvpn/client
+
+  # cp client的所需文件到 /etc/openvpn/client
+  cp pki/ca.crt pki/issued/[client-name].crt pki/private/[client-name].key /etc/openvpn/client
+  ```
+
 ### 开启ip转发
-  - 编辑/etc/sysctl.conf, 确保net.ipv4.ip_forward=1
-    - vim /etc/sysctl.conf
-      ```conf
-      net.ipv4.ip_forward=1
-      ```
-  - 重新load
-    - sysctl -p /etc/sysctl.conf
+
+- vim /etc/sysctl.conf, 确保net.ipv4.ip_forward=1
+  ```conf
+  # 这个默认好像是被注释掉的，解开注释就行
+  net.ipv4.ip_forward=1
+  ```
+- 重新load
+  ```shell
+  sysctl -p /etc/sysctl.conf
+  ```
+
 ### 配置文件
+
 #### Tips：
+
 - client/server配置问题 [[文档地址](https://openvpn.net/community-resources/how-to/)]
 - openvpn 命令详情 [[文档地址](https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage)]
 - 模板配置文件在目录下
-  - ll /usr/share/doc/openvpn/examples/sample-config-files
+  ```shell
+  ll /usr/share/doc/openvpn/examples/sample-config-files
+  ```
+
 #### 修改 server 配置文件
-  - cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz /etc/openvpn/[server-name].conf.gz
-  - gzip -d /etc/openvpn/[server-name].conf.gz
-  - vim /etc/openvpn/[server-name].conf
-    ```conf
-    # 当前监听的外网ip，可以不指定
-    ;local a.b.c.d
-    # server监听的端口号
-    port 1194
-    
-    # 当前服务采用啥协议，tcp和udp两种
-    proto tcp
-    ;proto udp
+- 复制server模板文件
+  ```shell
+  # 复制模板配置文件压缩包
+  cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz /etc/openvpn/[server-name].conf.gz
 
-     # 路由模式，vpn的子网ip pool，10.8.0.0/24 最多支持同时256个客户端连接
-    server 10.8.0.0 255.255.255.0
+  # 解压
+  gzip -d /etc/openvpn/[server-name].conf.gz
+  ```
+- vim /etc/openvpn/[server-name].conf
+  ```conf
+  # 当前监听的外网ip，可以不指定
+  ;local a.b.c.d
+  # server监听的端口号
+  port 1194
+  
+  # 当前服务采用啥协议，tcp和udp两种
+  proto tcp
+  ;proto udp
 
-    # 网桥模式，闲麻烦就用路由模式
-    ;server-bridge
-    ;server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
+  # 路由模式，vpn的子网ip pool，10.8.0.0/24 最多支持同时256个客户端连接
+  server 10.8.0.0 255.255.255.0
 
-    # 使用设备类型：tap => 网桥模式， tun => 路由模式
-    dev tun
-    ;dev tap
+  # 网桥模式，闲麻烦就用路由模式
+  ;server-bridge
+  ;server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
 
-    # 给客户端推送添加，指定私有子网路由，如果需要通过vpn server访问内部子网，在这配置一下响应的子网路由
-    push "route 192.168.1.0 255.255.255.0"
-    ;push "route 172.24.0.0 255.255.255.0"
+  # 使用设备类型：tap => 网桥模式， tun => 路由模式
+  dev tun
+  ;dev tap
 
-    # server 状态日志文件路径地址
-    status openvpn-status.log
-    # server 日志文件路径地址
-    log-append  openvpn.log
-    # server 日志级别
-    verb 3
-    # 连续至少20条重复的消息日志，不打印到log，根据需要开关
-    ;mute 20
+  # 给客户端推送添加，指定私有子网路由，如果需要通过vpn server访问内部子网，在这配置一下响应的子网路由
+  push "route 192.168.1.0 255.255.255.0"
+  ;push "route 172.24.0.0 255.255.255.0"
 
-    # 下面这几个参数，猜测和https的tls握手过程获取的内容是一样的，vpn只不过直接都拿到本地了，不再需要tls去获取了
-    # 公共证书
-    ca ca.crt
-    # tls加密层私钥key，server => 0，client => 1
-    tls-auth ta.key 0
-    # dh加密算法参数文件
-    dh dh.pem
-    # 加密密码
-    cipher AES-256-CBC
+  # server 状态日志文件路径地址
+  status openvpn-status.log
+  # server 日志文件路径地址
+  log-append  openvpn.log
+  # server 日志级别
+  verb 3
+  # 连续至少20条重复的消息日志，不打印到log，根据需要开关
+  ;mute 20
 
-    # server公开证书
-    cert myservername.crt
-    # server的私钥key
-    key myservername.key
+  # 下面这几个参数，猜测和https的tls握手过程获取的内容是一样的，vpn只不过直接都拿到本地了，不再需要tls去获取了
+  # 公共证书
+  ca ca.crt
+  # tls加密层私钥key，server => 0，client => 1
+  tls-auth ta.key 0
+  # dh加密算法参数文件
+  dh dh.pem
+  # 加密密码
+  cipher AES-256-CBC
 
-    # ping频率(秒/次) alive心跳最长周期
-    keepalive 10 120
+  # server公开证书
+  cert myservername.crt
+  # server的私钥key
+  key myservername.key
 
-    # k-v缓存，client的ip，断线重连，分配相同ip，根据需要开关
-    ifconfig-pool-persist /var/log/openvpn/ipp.txt
-    # 可以让客户端相互ping通访问
-    client-to-client
-    # 关闭则一个证书只能一个client使用连接，打开则可一个证书多端连接
-    duplicate-cn
+  # ping频率(秒/次) alive心跳最长周期
+  keepalive 10 120
 
-    # 客户端断线重连次数，只能udp模式下使用，否则tcp模式server启动报错
-    ;explicit-exit-notify 1
+  # k-v缓存，client的ip，断线重连，分配相同ip，根据需要开关
+  ifconfig-pool-persist /var/log/openvpn/ipp.txt
+  # 可以让客户端相互ping通访问
+  client-to-client
+  # 关闭则一个证书只能一个client使用连接，打开则可一个证书多端连接
+  duplicate-cn
 
-    # 客户端并发连接数
-    ;max-clients 100
+  # 客户端断线重连次数，只能udp模式下使用，否则tcp模式server启动报错
+  ;explicit-exit-notify 1
 
-    # 这俩暂时没搞清楚是怎么个作用
-    persist-key
-    persist-tun
+  # 客户端并发连接数
+  ;max-clients 100
 
-    # server 压缩方式
-    ;compress lz4-v2
-    # 推送给client的压缩方式
-    ;push "compress lz4-v2"
+  # 这俩暂时没搞清楚是怎么个作用
+  persist-key
+  persist-tun
 
-    # 兼容旧版本client的压缩方式，需要客户端也配置这项
-    ;comp-lzo
+  # server 压缩方式
+  ;compress lz4-v2
+  # 推送给client的压缩方式
+  ;push "compress lz4-v2"
 
-    # 给公共的client证书，绑定一个子网，供这个证书的client连接分配
-    ;client-config-dir ccd
-    ;route 192.168.40.128 255.255.255.248
+  # 兼容旧版本client的压缩方式，需要客户端也配置这项
+  ;comp-lzo
 
-    # 通过脚本来控制不同client的用户/用户组，
-    ;learn-address ./script
-    # 配置client，通过vpn，重定向到默认网关
-    ;push "redirect-gateway def1 bypass-dhcp"
-    # 配置client dns
-    ;push "dhcp-option DNS 208.67.222.222"
+  # 给公共的client证书，绑定一个子网，供这个证书的client连接分配
+  ;client-config-dir ccd
+  ;route 192.168.40.128 255.255.255.248
 
-    # 下面这个几个参数具体没整明白是怎么个作用
-    # 拓扑子网啥的
-    ;topology subnet
-    # wins下的新网桥
-    ;dev-node MyTap
-    # 非wins下可以开启，好像是liunx系统下的，共享用户和用户组
-    ;user nobody
-    ;group nogroup
-    ```
+  # 通过脚本来控制不同client的用户/用户组，
+  ;learn-address ./script
+  # 配置client，通过vpn，重定向到默认网关
+  ;push "redirect-gateway def1 bypass-dhcp"
+  # 配置client dns
+  ;push "dhcp-option DNS 208.67.222.222"
+
+  # 下面这个几个参数具体没整明白是怎么个作用
+  # 拓扑子网啥的
+  ;topology subnet
+  # wins下的新网桥
+  ;dev-node MyTap
+  # 非wins下可以开启，好像是liunx系统下的，共享用户和用户组
+  ;user nobody
+  ;group nogroup
+  ```
+
 #### 修改 client 配置文件
-  - cp /usr/share/doc/openvpn/examples/sample-config-files/[client-name].conf /etc/openvpn/client
-  - vim /etc/openvpn/client/[client-name].conf
-    ```conf
-    client
-    
-    # vpn server地址
-    remote [ip] [port]
-    # 通过tls层，进行server证书验证
-    remote-cert-tls server
-    # 解析域名重试次数，无限次或者指定次数
-    resolv-retry infinite
-    # 不绑定本地固定端口号
-    nobind
+- 复制client模板文件
+  ```shell
+  # 复制模板配置文件
+  cp /usr/share/doc/openvpn/examples/sample-config-files/[client-name].conf /etc/openvpn/client
+  ```
+- vim /etc/openvpn/client/[client-name].conf
+  ```conf
+  client
+  
+  # vpn server地址
+  remote [ip] [port]
+  # 通过tls层，进行server证书验证
+  remote-cert-tls server
+  # 解析域名重试次数，无限次或者指定次数
+  resolv-retry infinite
+  # 不绑定本地固定端口号
+  nobind
 
-    # 走http代理模式连接vpn
-    ;http-proxy [proxy server] [proxy port ]
-    ;http-proxy-retry
+  # 走http代理模式连接vpn
+  ;http-proxy [proxy server] [proxy port ]
+  ;http-proxy-retry
 
-    # 同server一样, ，tcp和udp两种
-    proto tcp
-    ;proto udp
-    # 同server一样, 设备类型：tap => 网桥模式， tun => 路由模式
-    dev tun
-    ;dev tap
+  # 同server一样, ，tcp和udp两种
+  proto tcp
+  ;proto udp
+  # 同server一样, 设备类型：tap => 网桥模式， tun => 路由模式
+  dev tun
+  ;dev tap
 
-    # 同server一样
-    ca ca.crt
-    # 同server一样, tls加密层私钥key，server => 0，client => 1
-    tls-auth ta.key 1
-    # 同server一样, 加密密码
-    cipher AES-256-CBC
+  # 同server一样
+  ca ca.crt
+  # 同server一样, tls加密层私钥key，server => 0，client => 1
+  tls-auth ta.key 1
+  # 同server一样, 加密密码
+  cipher AES-256-CBC
 
-    # client公开证书
-    cert client.crt
-    # client私有key
-    key client.key
+  # client公开证书
+  cert client.crt
+  # client私有key
+  key client.key
 
-    # 这俩暂时没搞清楚是怎么个作用
-    persist-key
-    persist-tun
+  # 这俩暂时没搞清楚是怎么个作用
+  persist-key
+  persist-tun
 
-    # server 日志级别
-    verb 3
-    # 连续至少20条重复的消息日志，不打印到log，根据需要开关
-    ;mute 20
-    # wifi模式下，会产生很多重复包，这个开关时静音，重复警报
-    ;mute-replay-warnings
+  # server 日志级别
+  verb 3
+  # 连续至少20条重复的消息日志，不打印到log，根据需要开关
+  ;mute 20
+  # wifi模式下，会产生很多重复包，这个开关时静音，重复警报
+  ;mute-replay-warnings
 
-    # 旧版本client的压缩方式，服务端若开启，则客户端也需要配置
-    ;comp-lzo
+  # 旧版本client的压缩方式，服务端若开启，则客户端也需要配置
+  ;comp-lzo
 
-    # 非wins下可以开启，好像是liunx系统下的，共享用户和用户组
-    ;user nobody
-    ;group nogroup
-    ```
+  # 非wins下可以开启，好像是liunx系统下的，共享用户和用户组
+  ;user nobody
+  ;group nogroup
+  ```
+
 #### 生成.ovpn客户端文件
-  - conf和.ovpn的区别，就是conf文件，加4个标签数据
-    ```conf
-    # 同conf内容
-    <ca>……</ca>
-    <cert>……</cert>
-    <key>……</key>
-    <tls-auth>……</tls-auth>
-    ```
-  - cd /etc/openvpn/client
-  - vim makeovpn.sh
-    ```sh
-    echo "Please enter an existing client.conf Name:"
-    read Name
+- conf和.ovpn的区别，就是conf文件，加4个标签数据
+  ```conf
+  # 同conf内容
+  <ca>……</ca>
+  <cert>……</cert>
+  <key>……</key>
+  <tls-auth>……</tls-auth>
+  ```
+- 切换目录到/etc/openvpn/client
+- vim makeovpn.sh
+  ```sh
+  echo "Please enter an existing client.conf Name:"
+  read Name
 
-    OvpnFile=$Name.ovpn
+  OvpnFile=$Name.ovpn
 
-    cat $Name.conf > $OvpnFile
-    echo "<ca>" >> $OvpnFile
-    cat ca.crt | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> $OvpnFile
-    echo "</ca>" >> $OvpnFile
+  cat $Name.conf > $OvpnFile
+  echo "<ca>" >> $OvpnFile
+  cat ca.crt | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> $OvpnFile
+  echo "</ca>" >> $OvpnFile
 
-    echo "<cert>" >> $OvpnFile
-    cat $Name.crt | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> $OvpnFile
-    echo "</cert>" >> $OvpnFile
+  echo "<cert>" >> $OvpnFile
+  cat $Name.crt | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> $OvpnFile
+  echo "</cert>" >> $OvpnFile
 
-    echo "<key>" >> $OvpnFile
-    cat $Name.key >> $OvpnFile
-    echo "</key>" >> $OvpnFile
+  echo "<key>" >> $OvpnFile
+  cat $Name.key >> $OvpnFile
+  echo "</key>" >> $OvpnFile
 
-    echo "<tls-auth>" >> $OvpnFile
-    cat ta.key >> $OvpnFile
-    echo "</tls-auth>" >> $OvpnFile
+  echo "<tls-auth>" >> $OvpnFile
+  cat ta.key >> $OvpnFile
+  echo "</tls-auth>" >> $OvpnFile
 
-    echo "Done! $OvpnFile Successfully Created."
-    ```
-  - ./makeovpn.sh
+  echo "Done! $OvpnFile Successfully Created."
+  ```
+- ./makeovpn.sh
 
 #### 私有内网路由转发配置
 - 假设openvpn server端口号时1194，子网：10.8.0.0/24
@@ -269,11 +316,12 @@ categories:
 - 查看服务日志和状态 (出问题了，可以把server日志级别调到最大9，方便排查问题)
   - systemctl status openvpn@[server配置文件名]
   - journalctl -u openvpn@[server配置文件名] -xe
+
 #### 客户端启动
 - wins
-  - OpenVPN官网下载client安装包，将上面生成.ovpn文件导入即可
+  - OpenVPN[官网下载](https://openvpn.net/community-downloads/)client安装包，将上面生成.ovpn文件导入即可
 - mac
-  - Tunnelblick用的是真的恶心，这里【推荐】使用【Viscosity】，真的稳定好用
+  - Tunnelblick用的是真的恶心，这里推荐，使用【Viscosity】，真的稳定好用
   - 操作步骤:
     - 将.ovpn文件导入Viscosity
     - 编辑导入的配置，选中[验证]菜单，将选项Direction，设置成1，这个对应与上面的tls-auth ta.key 1
@@ -282,4 +330,3 @@ categories:
 
 ## END
 到这就结束了，我们可以愉快的，随时通过vpn，远程自己家里的电脑了，舒服了~
-

@@ -4,7 +4,8 @@ date: 2021-11-29 23:21:09
 tags:
 - k8s
 categories:
-- ubuntu
+- [ubuntu]
+- [k8s]
 ---
 还是老规矩，贴出官方文档 [[->(^_^)<-](https://kubernetes.io/zh/docs/home/)]
 

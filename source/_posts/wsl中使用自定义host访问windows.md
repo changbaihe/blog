@@ -76,3 +76,6 @@ sudo chmod +x ~/.bash_config.sh
 ```bash
 echo -e "\n\. ~/.bash_config.sh" >> ~/.bashrc
 ```
+
+## END
+最终的目的算是实现了，给wsl本地添加一个自定义域名：winhost，动态的更新wsl本地hosts文件中ip映射，对于wsl来说，只需要使用域名winhost就行，肯定有人问，为啥不放到wsl开机启动上来更新host，主要是每次远程ssh的时候用，就没有那么整，完美一点就是弄一个开机启动脚本，不过不重要，有需要再说，😄。

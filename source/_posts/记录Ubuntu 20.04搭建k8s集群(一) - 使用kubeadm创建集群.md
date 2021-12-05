@@ -1,5 +1,5 @@
 ---
-title: 使用kubeadm搭建k8s集群-ubuntu/debian发行版
+title: 记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群
 date: 2021-11-29 23:21:09
 tags:
 - k8s
@@ -17,9 +17,9 @@ categories:
 
 - 需求来了，我需要一个小一点的服务环境，想了想用k8s吧，我是从之前公司开始接触的k8s，很幸运遇到一些很好和很厉害的人，带我get到了不少相关的东西(野路子入门)。对于野路子的我，有机会自然要亲自折腾折腾，好好体验一下，顺道野转正。
 
-- 言归正传，下面开始对着，官方文档，开始搞，毕竟自己折腾嘛，机器有限，为了真实，我用了一台电脑主机，装成了ubuntu，准备创建一个只有一个节点(master节点)的集群试试
+- 言归正传，下面开始对着，官方文档，开始搞，毕竟自己折腾嘛，机器有限，为了真实，我用了一台电脑主机，装成了ubuntu，准备创建一个只有一个节点(master节点)的集群试试，所有的调度都放到master上来，等之后富裕了再加work node吧。
 
-> 注：以下执行的命令，都假设当前为root用户
+注：以下执行的命令，都假设当前为root用户
 
 ## 准备工作 [[文档地址](https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm)]
   - [检查网络适配器](https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#%E6%A3%80%E6%9F%A5%E7%BD%91%E7%BB%9C%E9%80%82%E9%85%8D%E5%99%A8)
@@ -60,9 +60,9 @@ categories:
   apt-mark hold kubelet kubeadm kubectl
   ```
 
-## docker 运行时安装
+## 容器运行时(Container Runtime) - Docker
 
-### 官方教程
+### 官方安装说明
 - [[ubuntu](https://docs.docker.com/engine/install/ubuntu/)]
 - [[debian](https://docs.docker.com/engine/install/debian/)]
 
@@ -100,6 +100,8 @@ categories:
 
 - 使用kubeadm init([文档地址](https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/)) 创建的master节点，也可以当work节点使用，但主要功能是集群的控制面板
   - 初始化命令及参数
+    
+    注：kubeadm init命令的都执行了些什么 -> [[说明地址](https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#%E6%A6%82%E8%A6%81)]
     ```shell
     kubeadm init \
     # k8s版本号，默认：stable-1
@@ -111,59 +113,73 @@ categories:
       --pod-network-cidr 10.244.0.0/16
     ```
 
+  - 如果卡在了拉镜像上导致init慢或者失败
+    
+    查看kubeadm都使用了哪些基础镜像 -> [[说明地址](https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-config/#cmd-config-images-list)]
+
+    ```shell
+    $ kubeadm config images list
+    k8s.gcr.io/kube-apiserver:v1.22.4
+    k8s.gcr.io/kube-controller-manager:v1.22.4
+    k8s.gcr.io/kube-scheduler:v1.22.4
+    k8s.gcr.io/kube-proxy:v1.22.4
+    k8s.gcr.io/pause:3.5
+    k8s.gcr.io/etcd:3.5.0-0
+    k8s.gcr.io/coredns/coredns:v1.8.4
+    ```
+    可以使用阿里云镜像服务，搜索相应的镜像，提前docker pull下来 -> [[服务地址](https://cr.console.aliyun.com/cn-hangzhou/instances/images)]
   - 创建成功之后
-    - 保存集群配置文件
-      ```shell
-      # 为当前用户，创建kubectl的配置读取目录
-      mkdir ~/.kube
+    
+    保存集群配置文件
+    ```shell
+    # 为当前用户，创建kubectl的配置读取目录
+    mkdir ~/.kube
 
-      # 拷贝管理员配置文件
-      cp /etc/kubernetes/admin.conf ~/.kube/config
-      ```
+    # 拷贝管理员配置文件
+    cp /etc/kubernetes/admin.conf ~/.kube/config
+    ```
 
-    - 保存添加work节点的参数，方便后面扩展work节点
-      ```shell
-      kubeadm join [ip]:[port] --token [token-val] --discovery-token-ca-cert-hash [hash-val]
-      ```
+    保存添加work节点的参数，方便后面扩展work节点
+    ```shell
+    kubeadm join [ip]:[port] --token [token-val] --discovery-token-ca-cert-hash [hash-val]
+    ```
+
+- 查看kubelet日志
+  - 很多问题，看kubelet错误日志，就可以很好捕获到并解决
+
+    ```shell
+    journalctl -fxeu kubelet
+    ```
 
 - 异常问题 (只要出现任何报错，执行kubeadm reset重置上次的init)
     - docker的cgroup-driver与kubelet的不一致
-      - 查看各自cgroup-driver
-        ```shell
-        # 查看docker的cgroup-driver
-        docker info | grep "Cgroup D" | cut -d" " -f4
-
-        # 查看kubelet的cgroup-driver
-        cat /var/lib/kubelet/config.yaml | grep cgroupDriver | cut -d" " -f2
-        ```
-
-      - 解决办法：修改docker的cgroup-driver为systemd(假设kubelet的为systemd)
-        ```shell
-        # 添加配置项 "exec-opts": ["native.cgroupdriver=systemd"]
-        vim /etc/docker/daemon.json
-
-        # 重启docker
-        systemctl restart docker
-
-        # 查看docker的cgroup-driver
-        docker info | grep "Cgroup D" | cut -d" " -f4
-        ```
-
-    - 查看kubelet日志
+      
+      查看各自cgroup-driver
       ```shell
-      # 很多问题，看kubelet错误日志，就可以很好捕获到并解决
-      journalctl -fxeu kubelet
+      # 查看docker的cgroup-driver
+      docker info | grep "Cgroup D" | cut -d" " -f4
+
+      # 查看kubelet的cgroup-driver
+      cat /var/lib/kubelet/config.yaml | grep cgroupDriver | cut -d" " -f2
       ```
 
-### 安装插件addons
-- 创建addons目录
-  ```shell
-  mkdir ~/.kube/addons
-  ```
+      解决办法：修改docker的cgroup-driver为systemd(假设kubelet的为systemd)
+      ```shell
+      # 添加配置项 "exec-opts": ["native.cgroupdriver=systemd"]
+      vim /etc/docker/daemon.json
 
-- 安装cni插件 - flannel
-  - 步骤
+      # 重启docker
+      systemctl restart docker
+
+      # 查看docker的cgroup-driver
+      docker info | grep "Cgroup D" | cut -d" " -f4
+      ```
+
+### 安装cni插件(必装) - flannel
+
+  - 这个是必装的，没有容器网络插件，coredns 就会一直pending，有很多cni，我们这里选择了flannel，见[[更多](https://kubernetes.io/zh/docs/concepts/cluster-administration/networking/#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0-kubernetes-%E7%9A%84%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B)]
     ```shell
+    mkdir ~/.kube/addons
     cd ~/.kube/addons
 
     # 这个需要科学上网，才能下载
@@ -185,91 +201,5 @@ categories:
     rm -rf /etc/cni/net.d/*
     ```
 
-- 安装ui插件 - dashboard
-  - 步骤
-    ```shell
-    cd ~/.kube/addons
-
-    # 这个需要科学上网，才能下载
-    curl -o dashboard.yml https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
-    
-    # 使用下载好的文件
-    kubectl apply -f dashboard.yml
-
-    # 查看dashboard，运行情况
-    kubectl -n kubernetes-dashboard get pods -o wide
-    ```
-
-  - 创建管理员用户 [[文档地址](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#creating-a-service-account)]
-    - vim dashboard-adminuser.yaml
-      ```yaml
-      # 由于例子dashboard.yml中的ServiceAccount(kubernetes-dashboard)被赋予的权限太小，我们需要创建一个赋予集群权限的ServiceAccount(admin-user)
-
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: admin-user
-        namespace: kubernetes-dashboard
-
-      ---
-
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: admin-user
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: cluster-admin
-      subjects:
-      - kind: ServiceAccount
-        name: admin-user
-        namespace: kubernetes-dashboard
-      ```
-
-    - 创建admin-user
-      ```shell
-      kubectl apply -f dashboard-adminuser.yaml
-      ```
-
-    - 获取adminuser用户token
-      ```shell
-      kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}" && echo
-      ```
-
-  - 删除用户及权限 [[文档地址](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#clean-up-and-next-steps)]
-
-  - 浏览器访问dashboard，这里使用的是默认端口号6443
-    - https://[ip]:6443/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
-
-    - 将上面的token，填入对应输入栏即可
-
-  - 解决浏览器访问403问题
-    - 由于kubeadm init 生成的是私有证书，如需要浏览器访问，需要导出一份证书
-      ```shell
-      # 创建client目录
-      mkdir /etc/kubernetes/client && cd /etc/kubernetes/client
-
-      # 创建证书
-      grep 'client-certificate-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.crt
-
-      # 创建key
-      grep 'client-key-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.key
-      
-      # 生成证书文件
-      openssl pkcs12 -export -clcerts -inkey kubecfg.key -in kubecfg.crt -name "kubernetes-client" -out kubecfg.p12
-      ```
-
-    - 将生成的证书文件 kubecfg.p12 导入到浏览器中，假设使用chrome浏览器
-      - 点击右上角三个点
-
-      - 选择 设置
-
-      - 点击 隐私设置和安全性
-
-      - 选择 安全
-      
-      - 选择 管理证书，这时会弹出一个非浏览器界面
-      
-      - 点击 导入，按照默认步骤导入即可
-  
+## END
+到这里，基本上单个节点(master)的集群就创建好了，接下来(二)，我们安装【Web 界面(仪表盘)】- Dashboard

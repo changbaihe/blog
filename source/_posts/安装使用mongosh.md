@@ -43,3 +43,6 @@ categories:
     - db.isMaster()
   - 查看当前mongo实例信息
     - db.hostInfo()
+
+## END
+  按照cli工具惯用的方式，看到这基本上就很思路清晰了，回头需要查啥的可以直接去找对应的文档，不再借助ui工具了。

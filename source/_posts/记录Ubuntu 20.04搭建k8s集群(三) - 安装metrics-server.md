@@ -18,7 +18,7 @@ typora-copy-images-to: ..\images
 
 - 本来是不想先整metrics的，dashboard弄好了，本来挺舒服的，又去dashboard仓库转了一圈，看到了下面这张图，然后就发现，我的CPU Usage 和Memory Usage呢？？？
 
-  ![](/images/dashboard-sample.jpg)
+  ![](/images/k8s/dashboard-sample.jpg)
 
 - 然后Google一下，，，有人说是Metrics API有问题，就去看了一下，dashboard-metrics-scraper日志，果然。。。k8s自己本身api server 不提供Metrics数据指标整合接口实现。。。kubectl top 命令也是显示` error: metrics not available yet`。。
 

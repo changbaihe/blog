@@ -7,7 +7,7 @@ categories:
 - [ubuntu]
 - [k8s]
 typora-root-url: ..
-typora-copy-images-to: ..\images
+typora-copy-images-to: ..\images\k8s
 ---
 
  这次变了😄，文档下面详说下，强调一下当前背景：

@@ -305,17 +305,32 @@ categories:
 #### 私有内网路由转发配置
 - 假设openvpn server端口号时1194，子网：10.8.0.0/24
 - 防火墙配置 (这里需要注意, ubuntu 有自己的ufw，我们选择使用iptables配置，就关掉ufw，否则可能有影响)
-  - ufw disable
-  - iptables -I INPUT -p tcp --dport 1194 -m comment --comment "openvpn" -j ACCEPT
-  - iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
-  - iptables-save > /etc/sysconfig/iptalbes
+
+  ```shell
+  # 禁用防火墙
+  ufw disable
+  
+  # 配置规则
+  iptables -I INPUT -p tcp --dport 1194 -m comment --comment "openvpn" -j ACCEPT
+  iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
+  iptables-save > /etc/sysconfig/iptalbes
+  ```
 
 #### 启动服务端openvpn-server
 - 启动服务
-  - systemctl start openvpn@[server配置文件名]
+  ```shell
+  # 启动openvpn 服务
+  systemctl start openvpn@[server配置文件名]
+  ```
 - 查看服务日志和状态 (出问题了，可以把server日志级别调到最大9，方便排查问题)
-  - systemctl status openvpn@[server配置文件名]
-  - journalctl -u openvpn@[server配置文件名] -xe
+
+  ```shell
+  # 查看openvpn 服务状态
+  systemctl status openvpn@[server配置文件名]
+
+  # 查看日志
+  journalctl -u openvpn@[server配置文件名] -xe
+  ```
 
 #### 客户端启动
 - wins

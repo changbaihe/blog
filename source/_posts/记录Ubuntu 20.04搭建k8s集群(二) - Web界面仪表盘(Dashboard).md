@@ -37,7 +37,7 @@ categories:
   - 我把应用的工作负载都放在，~/.kube/apps/dashboard目录下吗，方便管理，具体看个人习惯
     ```shell
     # 递归创建目录
-    madir -p ~/.kube/apps/dashboard
+    mkdir -p ~/.kube/apps/dashboard
 
     # 切换目录到dashboard
     cd ~/.kube/apps/dashboard
@@ -73,8 +73,24 @@ categories:
     kubectl apply -f deployment.yaml
 
     # 查看dashboard的运行情况，不出意外pod都是running，到这dashboard就创建好了
-    kubectl -n kubernetes-dashboard get all -o wide
+    kubectl -n kubernetes-dashboard get all
+
+    # 若pod一直处于pending状态，执行如下操作（否则跳过），查看当前pod问题
+    kubectl -n kubernetes-dashboard get pod [podname] -o go-template --template={{.Events}} && echo
     ```
+
+  - pod一直pending常见原因：
+    
+    - 单节点集群：k8s默认master节点被标记taint，pod一般tolerations不容忍这个taint，导致pod不会被调度到master节点上，并且一直处于等待被调度中，有如下两种解决办法如下：
+      - 取消master的taint标记，让master参与被调度。
+
+        ```shell
+        # 命令详情：kubectl taint -h
+        kubectl taint nodes [nodename] node-role.kubernetes.io/master-
+        ```
+      - 新加一个work node到集群中。
+
+
 
 ### 创建admin账号(ServiceAccount)，文档即上面说的docs/user/access-control目录下，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md)
   - 上面下载的yaml文件中，默认的ServiceAccount权限太小，只能访问namespace为default的
@@ -126,57 +142,57 @@ categories:
 
 ### 访问dashboard，文档即docs/user/accessing-dashboard目录下，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md)
 
-  - 总共给出了4种方式访问dashboard
+##### 总共给出了4种方式访问dashboard
 
-    - 本地访问，临时代理，只能localhost/127.0.0.1访问，我理解是本地调试用的
-      - kubectl proxy访问，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-proxy)
+  - 本地访问，临时代理，只能localhost/127.0.0.1访问，我理解是本地调试用的
+    - kubectl proxy访问，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-proxy)
 
-      - kubectl port-forward访问，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-port-forward)
+    - kubectl port-forward访问，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-port-forward)
 
-    - NodePort直接暴露service到宿主机指定端口
-      - 相当于直接把pod暴露出去了，不是最好的方式，上面我选择的pod使用http当时暴露，这种方式我就跳过了。
+  - NodePort直接暴露service到宿主机指定端口
+    - 相当于直接把pod暴露出去了，不是最好的方式，上面我选择的pod使用http当时暴露，这种方式我就跳过了。
 
-      - 如果需要使用过这种方式，修改一下上面的deployment.yaml，将service的`type: ClusterIP`换成`type: Node Port`，然后为service指定一个固定的nodePort端口(不指定就是随机)，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#nodeport)
+    - 如果需要使用过这种方式，修改一下上面的deployment.yaml，将service的`type: ClusterIP`换成`type: Node Port`，然后为service指定一个固定的nodePort端口(不指定就是随机)，[详见](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#nodeport)
 
-    - Ingress代理，这个后面安装ingress的时候，用dashboard当作例子专门说下如何配置。
+  - Ingress代理，这个后面安装ingress的时候，用dashboard当作例子专门说下如何配置。
 
-    - API Server代理访问，这个path太长。。。。
+  - API Server代理访问，这个path太长。。。。
 
-  - 暂时选择API Server代理，来作为本篇访问dashboard的方式，下面是具体说明：
-    - 由于我们的api server使用的是 默认的自签证书的https，我们需要导出一份证书给浏览器用，否则浏览器访问403
+##### 暂时选择API Server代理，来作为本篇访问dashboard的方式，下面是具体说明：
+  - 由于我们的api server使用的是 默认的自签证书的https，我们需要导出一份证书给浏览器用，否则浏览器访问403
 
-      ```shell
-      # kubeadm init 默认k8s配置目录：/etc/kubernetes/
-      # 我们创建一个client目录，用于导出证书
-      mkdir /etc/kubernetes/client && cd /etc/kubernetes/client
+    ```shell
+    # kubeadm init 默认k8s配置目录：/etc/kubernetes/
+    # 我们创建一个client目录，用于导出证书
+    mkdir /etc/kubernetes/client && cd /etc/kubernetes/client
 
-      # 创建证书
-      grep 'client-certificate-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.crt
+    # 创建证书
+    grep 'client-certificate-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.crt
 
-      # 创建key
-      grep 'client-key-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.key
+    # 创建key
+    grep 'client-key-data' /etc/kubernetes/admin.conf | head -n 1 | awk '{print $2}' | base64 -d >> kubecfg.key
 
-      # 生成kubecfg.p12证书文件
-      openssl pkcs12 -export -clcerts -inkey kubecfg.key -in kubecfg.crt -name "kubernetes-client" -out kubecfg.p12
-      ```
+    # 生成kubecfg.p12证书文件
+    openssl pkcs12 -export -clcerts -inkey kubecfg.key -in kubecfg.crt -name "kubernetes-client" -out kubecfg.p12
+    ```
 
-    - 将生成的证书文件 kubecfg.p12 导入到浏览器中，假设使用chrome浏览器，具体步骤如下:
-      1. 点击右上角三个点，选择设置
+  - 将生成的证书文件 kubecfg.p12 导入到浏览器中，假设使用chrome浏览器，具体步骤如下:
+    1. 点击右上角三个点，选择设置
 
-      2. 点击 隐私设置和安全性，选择安全
-      
-      3. 然后选择 管理证书，这时会弹出一个非浏览器界面
-      
-      4. 点击 导入，按照默认步骤导入即可
+    2. 点击 隐私设置和安全性，选择安全
     
-    - 浏览器访问dashboard，kubeadm init创建集群时若没有指定api server端口，默认端口是6443
-      - https://[ip地址]:6443/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+    3. 然后选择 管理证书，这时会弹出一个非浏览器界面
+    
+    4. 点击 导入，按照默认步骤导入即可
+  
+  - 浏览器访问dashboard，kubeadm init创建集群时若没有指定api server端口，默认端口是6443
+    - https://[ip地址]:6443/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 
-      - 这块有两种验证方式
+    - 这块有两种验证方式
 
-        - kubeconfig方式，这里就不多说了，看文档整一份kubeconfig配置文件，[详见](https://kubernetes.io/zh/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
+      - kubeconfig方式，这里就不多说了，看文档整一份kubeconfig配置文件，[详见](https://kubernetes.io/zh/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
 
-        - token方式，将上面admin-user的token填入即可
+      - token方式，将上面admin-user的token填入即可
 
 ## 遗留问题
   - dashboard-metrics-scraper请求api server的metrics api调用异常，并且dashboard界面不显示CPU Usage和Memory Usage

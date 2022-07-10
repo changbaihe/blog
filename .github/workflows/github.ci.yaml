@@ -41,7 +41,7 @@ jobs:
 
       - name: Setup git config
         run: |
-          git config --global user.name changbaihe
+          git config --global user.name justajwolf
           git config --global user.email changbaihenx@163.com
 
       - name: Install blog dependencies, Deploy to gh-pages

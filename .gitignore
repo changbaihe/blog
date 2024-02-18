@@ -7,3 +7,4 @@ public/
 .deploy*/
 themes/**/*/.git/
 package-lock.json
+.deploy_git

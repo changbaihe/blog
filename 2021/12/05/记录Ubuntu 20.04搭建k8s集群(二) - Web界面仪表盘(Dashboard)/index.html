@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard) | J·Wolf</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="老规矩，寻源头看一手资料，贴出相关文档地址：  k8s官方文档 关于dashboard部分信息 [-&gt;(^_^)&lt;-] dashboard 仓库地址[-&gt;(^_^)&lt;-]关于dashboard文档(仓库docs目录下)，这里我先简单介绍一下： common：基本的文档，这个也是重点要查阅的地方。 dashboard容器 运行时传参args，详见， 这个对我们来说是最有用的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)">
+<meta property="og:url" content="https://justajwolf.github.io/blog/2021/12/05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/index.html">
+<meta property="og:site_name" content="J·Wolf">
+<meta property="og:description" content="老规矩，寻源头看一手资料，贴出相关文档地址：  k8s官方文档 关于dashboard部分信息 [-&gt;(^_^)&lt;-] dashboard 仓库地址[-&gt;(^_^)&lt;-]关于dashboard文档(仓库docs目录下)，这里我先简单介绍一下： common：基本的文档，这个也是重点要查阅的地方。 dashboard容器 运行时传参args，详见， 这个对我们来说是最有用的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-05T03:07:14.000Z">
+<meta property="article:modified_time" content="2024-02-18T06:08:53.140Z">
+<meta property="article:author" content="CBH">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="../../../../favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+    
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+<img id="avatar" alt="jwolf-logo" border="2"
+        src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMAUDc8RjwyUEZBRlpVUF94yIJ4bm549a+5kcj////////////////////////////////////////////////////bAEMBVVpaeGl464KC6//////////////////////////////////////////////////////////////////////////AABEIAZABkAMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAAAAQIDBAX/xAAwEAEBAAECBQIGAQQCAwEAAAAAAQIDERIhMUFRBGETIlJxgZEyFCNCoTNiNJLRsf/EABYBAQEBAAAAAAAAAAAAAAAAAAABAv/EABcRAQEBAQAAAAAAAAAAAAAAAAARASH/2gAMAwEAAhEDEQA/AM1it1igzWa1WaCAAEFgCKgIioAgAAAAAAAAAAAA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"
+      >
+      <h1 id="logo-wrap">
+        <a href="../../../../index.html" id="logo">J·Wolf</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="../../../../index.html">主页</a>
+        
+          <a class="main-nav-link" href="../../../../archives">归档</a>
+        
+          <a class="main-nav-link" target="_blank" rel="noopener" href="https://github.com/justajwolf">GitHub</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://justajwolf.github.io/blog"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time class="dt-published" datetime="2021-12-05T03:07:14.000Z" itemprop="datePublished">2021-12-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/k8s/">k8s</a>/<a class="article-category-link" href="../../../../categories/ubuntu/">ubuntu</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>老规矩，寻源头看一手资料，贴出相关文档地址：</p>
+<ul>
+<li>k8s官方文档 关于dashboard部分信息 [<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/tasks/access-application-cluster/web-ui-dashboard/">-&gt;(^_^)&lt;-</a>]</li>
+<li>dashboard 仓库地址[<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard">-&gt;(^_^)&lt;-</a>]<br>关于dashboard文档(仓库docs目录下)，这里我先简单介绍一下：<ul>
+<li><code>common</code>：基本的文档，这个也是重点要查阅的地方。<ul>
+<li>dashboard容器 运行时传参args，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/common/dashboard-arguments.md">详见</a>， 这个对我们来说是最有用的。</li>
+<li>dashboard常见问题问答 FAQ，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/common/faq.md">详见</a>。</li>
+<li>dashboard规划和发展蓝图 roadmap，有兴趣可以了解下。</li>
+</ul>
+</li>
+<li><code>design</code>：设计想法相关东西，不过多阐述。</li>
+<li><code>developer</code>：给贡献的开发者的，不过多阐述。</li>
+<li><code>plugins</code>：如何为dashboard搞插件的，不过过多阐述。</li>
+<li><code>user</code>：用户相关的安装使用，这个是重点要看一看的。<ul>
+<li><code>installation.md</code>：<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/installation.md#official-release">稳定版安装</a>&#x2F;<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/installation.md#development-release">最新开发版安装</a>。</li>
+<li><code>integrations.md</code>：迁移相关的，不过多阐述</li>
+<li><code>labels.md</code>：dashboard仓库中标签定义描述，提issue可能需要注意，不过过多阐述。</li>
+<li><code>certificate-management.md</code>：https证书相关，如何生成自签https证书，这个有必要看看。</li>
+<li><code>access-control</code>：如何为dashboard创建管理员账号，以及绑定集群管理权限，这个必看，下面会具体说。</li>
+<li><code>acessing-dashboard</code>：如何访问dashboard，提供几种方式，这个必看，根据个人情况选择，这个下面会具体说。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="我与dashboard的那点事"><a href="#我与dashboard的那点事" class="headerlink" title="我与dashboard的那点事"></a>我与dashboard的那点事</h2><ul>
+<li><p>单节点集群创建完了，k8s有一个ui工具dashboard，这我就不矫情了，，那肯定是要来一个，看命令行多难受，不到万不得已，谁看命令行🦆。</p>
+</li>
+<li><p>开整开整😂~</p>
+</li>
+</ul>
+<h2 id="开始安装"><a href="#开始安装" class="headerlink" title="开始安装"></a>开始安装</h2><h3 id="使用工作负载，创建dashboard"><a href="#使用工作负载，创建dashboard" class="headerlink" title="使用工作负载，创建dashboard"></a>使用工作负载，创建dashboard</h3><ul>
+<li><p>我把应用的工作负载都放在，~&#x2F;.kube&#x2F;apps&#x2F;dashboard目录下吗，方便管理，具体看个人习惯</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">递归创建目录</span></span><br><span class="line">mkdir -p ~/.kube/apps/dashboard</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">切换目录到dashboard</span></span><br><span class="line">cd ~/.kube/apps/dashboard</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看文档安装说明，即上面说过的docs&#x2F;user&#x2F;installation.md文件，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/installation.md">详见</a>，此处我选择official-release(也就是稳定发布的版本)</p>
+<p>这块需要注意一下，可能github文件下载不下来，这个时候两个选择：1.科学上网，2.免费的cdn，推荐jsdelivr转换gihtub地址，<a target="_blank" rel="noopener" href="https://www.jsdelivr.com/github">详见转换界面</a>。</p>
+<p>需要注意下，这块提供了两个选择，pod使用https还是使用http，虽然https为官方推荐，但是看个人情况吧，我的service不对外开放并且node之间也是内网环境，我选择pod使用http明文方式暴露。</p>
+<ul>
+<li><p>下载pod使用https的yaml文件, 这是官方推荐的</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">科学上网的话就直接贴地址了😄</span></span><br><span class="line">curl -o dashboard.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用jsdelivr转换gihtub地址</span></span><br><span class="line">curl -o dashboard.yaml https://cdn.jsdelivr.net/gh/kubernetes/dashboard@v2.4.0/aio/deploy/recommended.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>下载pod使用http的yaml文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">科学上网的话就直接贴地址了😄</span></span><br><span class="line">curl -o deployment.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/alternative.yaml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用jsdelivr转换gihtub地址</span></span><br><span class="line">curl -o deployment.yaml https://cdn.jsdelivr.net/gh/kubernetes/dashboard@v2.4.0/aio/deploy/alternative.yaml</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>使用上面下载的yaml文件，创建dashboard，当然看个人情况可以修改yaml文件，适应自己的需求</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这里我使用的是pod使用http方式的</span></span><br><span class="line">kubectl apply -f deployment.yaml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看dashboard的运行情况，不出意外pod都是running，到这dashboard就创建好了</span></span><br><span class="line">kubectl -n kubernetes-dashboard get all</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">若pod一直处于pending状态，执行如下操作（否则跳过），查看当前pod问题</span></span><br><span class="line">kubectl -n kubernetes-dashboard get pod [podname] -o go-template --template=&#123;&#123;.Events&#125;&#125; &amp;&amp; echo</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>pod一直pending常见原因：</p>
+<ul>
+<li>单节点集群：k8s默认master节点被标记taint，pod一般tolerations不容忍这个taint，导致pod不会被调度到master节点上，并且一直处于等待被调度中，有如下两种解决办法如下：<ul>
+<li><p>取消master的taint标记，让master参与被调度。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">命令详情：kubectl taint -h</span></span><br><span class="line">kubectl taint nodes [nodename] node-role.kubernetes.io/master-</span><br></pre></td></tr></table></figure></li>
+<li><p>新加一个work node到集群中。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="创建admin账号-ServiceAccount-，文档即上面说的docs-user-access-control目录下，详见"><a href="#创建admin账号-ServiceAccount-，文档即上面说的docs-user-access-control目录下，详见" class="headerlink" title="创建admin账号(ServiceAccount)，文档即上面说的docs&#x2F;user&#x2F;access-control目录下，详见"></a>创建admin账号(ServiceAccount)，文档即上面说的docs&#x2F;user&#x2F;access-control目录下，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md">详见</a></h3><ul>
+<li><p>上面下载的yaml文件中，默认的ServiceAccount权限太小，只能访问namespace为default的</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建dashboard-adminuser.yaml文件</span></span><br><span class="line">echo &lt;&lt; EOF &gt; dashboard-adminuser.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kubernetes-dashboard</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"></span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: admin-user</span><br><span class="line">roleRef:</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: cluster-admin</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: admin-user</span><br><span class="line">  namespace: kubernetes-dashboard</span><br><span class="line"></span><br><span class="line">EOF</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建admin-user用户</span></span><br><span class="line">kubectl apply -f dashboard-adminuser.yaml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看admin-user</span></span><br><span class="line">kubectl describe sa admin-user -n kubernetes-dashboard</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除用户及校色绑定关，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#clean-up-and-next-steps">详见</a></p>
+</li>
+<li><p>获取adminuser用户token，注意保存token，用户登录dashboard</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl \</span><br><span class="line">-n kubernetes-dashboard \</span><br><span class="line">get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath=&quot;&#123;.secrets[0].name&#125;&quot;) \</span><br><span class="line">-o go-template=&quot;&#123;&#123;.data.token | base64decode&#125;&#125;&quot; \</span><br><span class="line">&amp;&amp; echo</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="访问dashboard，文档即docs-user-accessing-dashboard目录下，详见"><a href="#访问dashboard，文档即docs-user-accessing-dashboard目录下，详见" class="headerlink" title="访问dashboard，文档即docs&#x2F;user&#x2F;accessing-dashboard目录下，详见"></a>访问dashboard，文档即docs&#x2F;user&#x2F;accessing-dashboard目录下，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md">详见</a></h3><h5 id="总共给出了4种方式访问dashboard"><a href="#总共给出了4种方式访问dashboard" class="headerlink" title="总共给出了4种方式访问dashboard"></a>总共给出了4种方式访问dashboard</h5><ul>
+<li><p>本地访问，临时代理，只能localhost&#x2F;127.0.0.1访问，我理解是本地调试用的</p>
+<ul>
+<li><p>kubectl proxy访问，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-proxy">详见</a></p>
+</li>
+<li><p>kubectl port-forward访问，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#kubectl-port-forward">详见</a></p>
+</li>
+</ul>
+</li>
+<li><p>NodePort直接暴露service到宿主机指定端口</p>
+<ul>
+<li><p>相当于直接把pod暴露出去了，不是最好的方式，上面我选择的pod使用http当时暴露，这种方式我就跳过了。</p>
+</li>
+<li><p>如果需要使用过这种方式，修改一下上面的deployment.yaml，将service的<code>type: ClusterIP</code>换成<code>type: Node Port</code>，然后为service指定一个固定的nodePort端口(不指定就是随机)，<a target="_blank" rel="noopener" href="https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md#nodeport">详见</a></p>
+</li>
+</ul>
+</li>
+<li><p>Ingress代理，这个后面安装ingress的时候，用dashboard当作例子专门说下如何配置。</p>
+</li>
+<li><p>API Server代理访问，这个path太长。。。。</p>
+</li>
+</ul>
+<h5 id="暂时选择API-Server代理，来作为本篇访问dashboard的方式，下面是具体说明："><a href="#暂时选择API-Server代理，来作为本篇访问dashboard的方式，下面是具体说明：" class="headerlink" title="暂时选择API Server代理，来作为本篇访问dashboard的方式，下面是具体说明："></a>暂时选择API Server代理，来作为本篇访问dashboard的方式，下面是具体说明：</h5><ul>
+<li><p>由于我们的api server使用的是 默认的自签证书的https，我们需要导出一份证书给浏览器用，否则浏览器访问403</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">kubeadm init 默认k8s配置目录：/etc/kubernetes/</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">我们创建一个client目录，用于导出证书</span></span><br><span class="line">mkdir /etc/kubernetes/client &amp;&amp; cd /etc/kubernetes/client</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建证书</span></span><br><span class="line">grep &#x27;client-certificate-data&#x27; /etc/kubernetes/admin.conf | head -n 1 | awk &#x27;&#123;print $2&#125;&#x27; | base64 -d &gt;&gt; kubecfg.crt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建key</span></span><br><span class="line">grep &#x27;client-key-data&#x27; /etc/kubernetes/admin.conf | head -n 1 | awk &#x27;&#123;print $2&#125;&#x27; | base64 -d &gt;&gt; kubecfg.key</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">生成kubecfg.p12证书文件</span></span><br><span class="line">openssl pkcs12 -export -clcerts -inkey kubecfg.key -in kubecfg.crt -name &quot;kubernetes-client&quot; -out kubecfg.p12</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将生成的证书文件 kubecfg.p12 导入到浏览器中，假设使用chrome浏览器，具体步骤如下:</p>
+<ol>
+<li><p>点击右上角三个点，选择设置</p>
+</li>
+<li><p>点击 隐私设置和安全性，选择安全</p>
+</li>
+<li><p>然后选择 管理证书，这时会弹出一个非浏览器界面</p>
+</li>
+<li><p>点击 导入，按照默认步骤导入即可</p>
+</li>
+</ol>
+</li>
+<li><p>浏览器访问dashboard，kubeadm init创建集群时若没有指定api server端口，默认端口是6443</p>
+<ul>
+<li><p>https:&#x2F;&#x2F;[ip地址]:6443&#x2F;api&#x2F;v1&#x2F;namespaces&#x2F;kubernetes-dashboard&#x2F;services&#x2F;https:kubernetes-dashboard:&#x2F;proxy&#x2F;</p>
+</li>
+<li><p>这块有两种验证方式</p>
+<ul>
+<li><p>kubeconfig方式，这里就不多说了，看文档整一份kubeconfig配置文件，<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/concepts/configuration/organize-cluster-access-kubeconfig/">详见</a></p>
+</li>
+<li><p>token方式，将上面admin-user的token填入即可</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h2><ul>
+<li>dashboard-metrics-scraper请求api server的metrics api调用异常，并且dashboard界面不显示CPU Usage和Memory Usage<ul>
+<li><p>上篇创建集群，没有安装metrics-server，所有这块dashboard是没办法通过k8s的metrics api采集到node和pod的信息的，dashboard上就不会显示CPU Usage和Memory Usage图表。</p>
+</li>
+<li><p>不过这不影响dashboard的正常使用，下篇安装了metrics-server，CPU Usage和Memory Usage就有了。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="END"><a href="#END" class="headerlink" title="END"></a>END</h2><p>到这dashboard就整好了，集群的所有状态和配置，尽收眼底，使用界面管理，舒服了~</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://justajwolf.github.io/blog/2021/12/05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/" data-id="clsr7q0j4000addqf885ubgbv" data-title="记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="../../06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server
+        
+      </div>
+    </a>
+  
+  
+    <a href="../../../11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/mongodb/">mongodb</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ubuntu/">ubuntu</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/windows/">windows</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/mongodb/" rel="tag">mongodb</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/openvpn/" rel="tag">openvpn</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/wsl/" rel="tag">wsl</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/10/">十月 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../07/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E5%9B%9B)%20-%20%E5%AE%89%E8%A3%85ingress%20controller/">记录Ubuntu 20.04搭建k8s集群(四) - 安装ingress controller</a>
+          </li>
+        
+          <li>
+            <a href="../../06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/">记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server</a>
+          </li>
+        
+          <li>
+            <a href="">记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/">记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/23/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAOpenVPN%E6%9C%8D%E5%8A%A1/">记录Ubuntu 20.04搭建OpenVPN服务</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 CBH<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="../../../../index.html" class="mobile-nav-link">主页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a target="_blank" rel="noopener" href="https://github.com/justajwolf" class="mobile-nav-link">GitHub</a>
+  
+</nav>
+    
+
+
+<script src="../../../../js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="../../../../fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

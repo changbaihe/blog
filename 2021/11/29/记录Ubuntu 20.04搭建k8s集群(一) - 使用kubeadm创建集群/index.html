@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群 | J·Wolf</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="还是老规矩，贴出官方文档 [-&gt;(^_^)&lt;-] 我与K8s的那点事 一直有这么个想法，自己设计产品，设计logo，开发前端，开发后端，然后流水线上线发布。  直到近半年，才开始一点一点上手，有尝试从研究别人的东西和构思自己的东西开始做，但是总觉得好别扭，有好多中间缺口，并且正的反馈感好弱，相对于创造性的东西，查说明书操作的事情干起来反馈感强好多，于是就调整了开始方向，先为自己搞一套服">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群">
+<meta property="og:url" content="https://justajwolf.github.io/blog/2021/11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/index.html">
+<meta property="og:site_name" content="J·Wolf">
+<meta property="og:description" content="还是老规矩，贴出官方文档 [-&gt;(^_^)&lt;-] 我与K8s的那点事 一直有这么个想法，自己设计产品，设计logo，开发前端，开发后端，然后流水线上线发布。  直到近半年，才开始一点一点上手，有尝试从研究别人的东西和构思自己的东西开始做，但是总觉得好别扭，有好多中间缺口，并且正的反馈感好弱，相对于创造性的东西，查说明书操作的事情干起来反馈感强好多，于是就调整了开始方向，先为自己搞一套服">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-11-29T15:21:09.000Z">
+<meta property="article:modified_time" content="2024-02-18T06:08:53.140Z">
+<meta property="article:author" content="CBH">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="../../../../favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+    
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+<img id="avatar" alt="jwolf-logo" border="2"
+        src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMAUDc8RjwyUEZBRlpVUF94yIJ4bm549a+5kcj////////////////////////////////////////////////////bAEMBVVpaeGl464KC6//////////////////////////////////////////////////////////////////////////AABEIAZABkAMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAAAAQIDBAX/xAAwEAEBAAECBQIGAQQCAwEAAAAAAQIDERIhMUFRBGETIlJxgZEyFCNCoTNiNJLRsf/EABYBAQEBAAAAAAAAAAAAAAAAAAABAv/EABcRAQEBAQAAAAAAAAAAAAAAAAARASH/2gAMAwEAAhEDEQA/AM1it1igzWa1WaCAAEFgCKgIioAgAAAAAAAAAAAAAAAAAAAAAAAAAAoIAACggAAqAAA9SVUoM1mtVmgyFQFVIoCKgIioCAAAAAAAAAAAAAAAAAAAAAAA3jhlewMjrNKd61NPGdgcNrehZZ1ejp0jlq/y262A5gAAAAAqKgAAPUlCgzWa1WaDNRagNQADqjeG+92/TpysB50ei4Y3szdKdt4DgOt0r2rFxs6wGQAAABQEGpjb2qzTy8AwOnwr5a+D/wBv9A4jt8H/ALf6T4P/AGByHS6V8xLp5TsDAu1nYBBW8dO3neQMSb9HSaV73Z0xxmPRQTHGY9IoAAScWW0/NAlmONzv4ea9Xf1F2kwjgAioCgAAAIqAAA9IgCVmtVmgzSFUAACXhss7O+e3LKdL1cHXQu8uNBQynDlt2vQAABnLCXs5ZaeU93fozvcunKeQcGscLl2dpjJz63yoMTSk682pJOkUAAAAAAAAAZuGN7NAM44TFoAAAAAS9HXHHhx2/bGE3u/aN55cOFvgHm17vq1zLd7vQBFQFAAAARUAAB6BACs1qs0EFSggAKunlwZb9mQHrynFi599r1jWjd9Ofo1Jy4p2BlLZOq9t2Z814v0BtcuvKeGgAAAAAAAAAAAAAAAAAAANrbtO41pzncgbxm02jj6jLlMY7PHqZcWdoMgAAAAAAAIqAAA7gAVmqAiVUoIAABQb0Mts9u1el4pdrvHq+J/b4pztBzym+dk/jGiAAAAAAAAAAAAAAAAAAAAAJlvtyawz2u12kiJZuDpqZbadsrxvRtdpjy4XLPTuPOc4DAAAAAAAACKgAAOwABBQZqVUoIAAlVAHTS3v2jm74zbGQFAAAAAAAAAAAAAAAAAAAAAAAAABwzx4cvZl6MseKPPeVAAAAAAARUAAB1ABYEARFQEAAQAXCb5x3c9Kda6AlsnWp82XTlPck3vFf00DPDl9f+lx4u93UAAAABMrZ0m6fP5kaAZ+edpVmUv38KmWO/tQUSb7c1AAAAAAAAAAAAAYzxlu/RtLN5sDjljcesZd8fmm17cnPPDh5zoDAAAACKgAAOgEBoQARUBEVAAAdtP+EaTHljFAAAAAAAAAAAAAAAAAAAAAAAAAAAABm74577cq1yvuJZtzxBzz09uc6Ob0SyuWeHDeXQGAAAABAG1iKCgAIAIioADUwvK3yDsCc/YFE5+xvl4l/IKM8XPa42NAAAAACXi7WRngt65UGxj4fvf2vw55v7BoAAAAAAAAAAAAAAAAAEs3+/Yl4ptVSze7zqDjnjw3Zl2ynHNuljlZtdgQAAAGoqRQAAAQBO6uuGExnuDOGPDOLJqS5Xe/gnzZb9p0aAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABLyu7nq48+KOrM63EHAXKbZWIAADQAAAANYY8V9oC4Yd7+Gsr2nWtM487cvPQFk2mygAFu03dMfT3UxluXDL+wcbqYzuzdXxHovoce2d/MeXV07p53G9QPi3xD4uXiMbIDrNXzG8c5l0edYD0jOGfF92gAAAAAAAAAAAAAAAAAAAAAAAAEynedYb89pzOd8AxqzeTKOT0bfLtXDKcN2BAAUAAAB205tj93GdY6zUxvsDWV2xuxOU2TKyybeWgAAY1btj93p0PVYXGY53hsefUm+LgD6WfqdLGcst/s8OrqXU1LlY5KC1kAAWS27QG9L+Tszhjwz3aAAAAAAAAAAAAAAAAAAAAAAAEtkN7ek/YJjy3l67tJw+buoDnrTlu6M5zfCg4AAAAA6aOndXUmM/IMI+l/S6W23C+fqY8Gdx8UDD+cd3DTvzSbO4AADOWEyaAcbpZTpzYuNnZ6QHm2virMMr2egByx0vqdMcZj0igAAAAAAAAAAAAAAAAAAAAAADMtyvLlI1ZvGcO98gskn3UAAAAAcM5tlYy66s5buQIAA9/ocNsLn5eF9XSx4dLGeyDb5nqv/Iz+76b5fqP+fP7gxh/OPQ8z0zpKoAAAAAAAAAAAAAAAAAAAnFJdryBRrDS1NTpjwzzWcsZhq5SW3byAAAAAAAAAACZ3ae6ybRnHnlxfpoAAAAAAEzm+NjzvS8+c2yoIgoNac3zxnmvrPl6E31sPu+omg+X6j/nz+76j5nqZ/fz+5g5O2llvNvDg1jeHLdR6Al3m/Yx4OOXUm+N5AJxTfZ2y9PhZvp52b9m9XR+THHDaWXuDzjV0dWf4b/anBn3wyBkXhy+jL9U2v05foEDa/Tl+l2y+nL/ANaCC8Gf0ZfpeDP6Mv0DI18LV7ad/NjU9Pq3rwwHMdp6W/5al/E2dMfTaU/x3vuDyS73bGXK+zpjo6mXXGYz3r2SSTaST7JbMedsgOH9PJPm1LPtybw0sZjy6y8rVy+fLGcNsl3trWOMxm06AzblwZXLabPHjNp93o9Rqzbgxu97+zgAAAAAAAAAzbveH9rlduU6mM4Z7goAAAAAAADhqfzru5a05yg5jt6fS47vek/29ly08JtvjGd2Dw6HLWw+76jz/wBrPlxS3tfDWOeWFmOfOXlMv/pVdnzvVY2+ou033e3Uzssxx55X/ThlrYaVsu+eV62FHmnp9SzlhWc9PPD+WNj0z1mM5TC/s/q8b2/F5l0cNLLta62b8nPVmN+fDpvzngwz35VpHs9PnjlJjduPHv5dNWW6d2u168nj95yvl20/U7bTU/8AYHWWad2vLG9HSXfpUm1nmLJJ0gCgAAAACKAAAM5S3pdjHGTt+arGpq46c53n2nkG3m9Rq3fgwu071jU1c9S87tPEYAk2AAAAAABMspP/AICs3Lflj+y8V7cvBxScrLAWTaeVJZZyAAAAAAAAAGNWfK2mc3xoJdb4ePBh+3C2272gCzq9txxmny1NpZ0t3eLGb2bu2OPe/hNwamdy3yzl3vaMepyxyuPBy5dG0yxmXUg84uWPDdmVF3uzppYyy7uT0ac2wgG9x6855a5X3E4fp5UGsM89P+OXLxejtj6qdNSbe85x5/mnXH8wmUvcHuxzxzny5StPn7Tfecq3x6k6amX/AOg9w8U19Wd8b94v9TqfTj+weweT+p1Pox/af1Or9OP+wexHjuvrX/LGfaJ8TUvXUv4B7LZOtkcsvU4TlN8r7PNfm62373cB0y19TKcvlnt1ctufm+VAAAAABLZOthv4loKlsnUmOV63aezUxk7cwYlyvSbT3L8vPbfzW7EBJZeipcZeffynzz3AuEvPnPsbZTpdzi88lmUveAnFt1ljUss5CbTwCs8VvSLt4tJAOfiFtniqX2AllnIZn8uc2aAAB5gAa08d8vs65ZXxY4S7XeO8y5dKCYWb2TdtvR2u8ynNdfTxwxlx3m98s3sHDUx4tufNn4N8tW/3JG2hyy05jN9+brJtJGcudxnu0AsiTq0AmWMy6xQGPh2fxyv5Pn7yX7VsBi2zrjf0nHj52dAGOKeYrW08ROHHxAQXgx+mHDj9MBBeHH6YcOPifoGeKeYcWPmNbTxF2ngHPjx87/Zd7emNbAY+btJPycGV65fpsBmYYztu0AAACWKAyFAGbhjezQCSWdL+zfzFATiiplO86xZd+gCXfsqcUl6gb3fp+iWVevRL1gKADzAAOmOrZNrHNAd8Nfhy3uO/hNT1GWcku0k8OIkFttu5vfKCjppfy/Ds5aPWuoLFAAAAAAAAAAAAAAAAAAAAAAAAACstJQQAAABLOHnOndQDqknInKbUncDhngmMnRQAAHmAAABAAAAddHu6xz0eldYCgAAAAAAAAAAAAAAAAAAAAAAAAAAAyLeqAAAAAAAAAAA8wACKgAAAAO2j0rrHLR6V2nQAAAAAAAAAAAAAAAAAAAAAAAAAAAAEqNMgAAAAAAAAAA8wACKgAAAAOuj3d50cNH+V+zvOgAAAAAAAAAAAAAAAAAAAAAAAAAAAADNaS9QQAAAAAAAA7DOpdsAcAAEAAAAAG8LtlHpnR5Hp07xYyg0AAAAAAAAAAAAAAAAAAAAAAAAAAAAlVKCAAAAAAAAOOrd8tvDs8+V3ytBAAEVAAAAUB10LzsciWy7wHrExy4sZVAAAAAAAAAAAAAAAAAAAAAAAAAAASqlBAAAAAAATPLhxtBjVy2m0ci2271Af/9k="
+      >
+      <h1 id="logo-wrap">
+        <a href="../../../../index.html" id="logo">J·Wolf</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="../../../../index.html">主页</a>
+        
+          <a class="main-nav-link" href="../../../../archives">归档</a>
+        
+          <a class="main-nav-link" target="_blank" rel="noopener" href="https://github.com/justajwolf">GitHub</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://justajwolf.github.io/blog"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time class="dt-published" datetime="2021-11-29T15:21:09.000Z" itemprop="datePublished">2021-11-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/k8s/">k8s</a>/<a class="article-category-link" href="../../../../categories/ubuntu/">ubuntu</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>还是老规矩，贴出官方文档 [<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/home/">-&gt;(^_^)&lt;-</a>]</p>
+<h2 id="我与K8s的那点事"><a href="#我与K8s的那点事" class="headerlink" title="我与K8s的那点事"></a>我与K8s的那点事</h2><ul>
+<li><p>一直有这么个想法，自己设计产品，设计logo，开发前端，开发后端，然后流水线上线发布。</p>
+</li>
+<li><p>直到近半年，才开始一点一点上手，有尝试从研究别人的东西和构思自己的东西开始做，但是总觉得好别扭，有好多中间缺口，并且正的反馈感好弱，相对于创造性的东西，查说明书操作的事情干起来反馈感强好多，于是就调整了开始方向，先为自己搞一套服务环境吧。</p>
+</li>
+<li><p>需求来了，我需要一个小一点的服务环境，想了想用k8s吧，我是从之前公司开始接触的k8s，很幸运遇到一些很好和很厉害的人，带我get到了不少相关的东西(野路子入门)。对于野路子的我，有机会自然要亲自折腾折腾，好好体验一下，顺道野转正。</p>
+</li>
+<li><p>言归正传，下面开始对着，官方文档，开始搞，毕竟自己折腾嘛，机器有限，为了真实，我用了一台电脑主机，装成了ubuntu，准备创建一个只有一个节点(master节点)的集群试试，所有的调度都放到master上来，等之后富裕了再加work node吧。</p>
+</li>
+</ul>
+<p>注：以下执行的命令，都假设当前为root用户</p>
+<h2 id="准备工作-文档地址"><a href="#准备工作-文档地址" class="headerlink" title="准备工作 [文档地址]"></a>准备工作 [<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm">文档地址</a>]</h2><ul>
+<li><p><a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#%E6%A3%80%E6%9F%A5%E7%BD%91%E7%BB%9C%E9%80%82%E9%85%8D%E5%99%A8">检查网络适配器</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#%E6%A3%80%E6%9F%A5%E7%BD%91%E7%BB%9C%E9%80%82%E9%85%8D%E5%99%A8">允许 iptables 检查桥接流量</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports">检查所需端口</a></p>
+</li>
+</ul>
+<h2 id="安装-kubernetes-cni-kubeadm-kubelet-kubectl"><a href="#安装-kubernetes-cni-kubeadm-kubelet-kubectl" class="headerlink" title="安装 kubernetes-cni kubeadm kubelet kubectl"></a>安装 kubernetes-cni kubeadm kubelet kubectl</h2><ul>
+<li><p>简介</p>
+<ul>
+<li><p>kubernetes-cni：常见容器网络接口模块插件</p>
+</li>
+<li><p>kubeadm：用来初始化集群的指令</p>
+</li>
+<li><p>kubelet：在集群中的每个节点上用来启动 Pod 和容器等</p>
+</li>
+<li><p>kubectl：用来与集群通信的命令行工具</p>
+</li>
+</ul>
+</li>
+<li><p>安装命令</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">更新 apt 包索引并安装使用 Kubernetes apt 仓库所需要的包</span></span><br><span class="line">apt-get update</span><br><span class="line">apt-get install -y apt-transport-https ca-certificates curl</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用aliyun包密钥</span></span><br><span class="line">curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add -</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">添加Kubernetes apt 仓库</span></span><br><span class="line">cat &lt;&lt; EOF &gt; /etc/apt/sources.list.d/kubernetes.list</span><br><span class="line">deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main </span><br><span class="line">EOF</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">安装 kubernetes-cni</span></span><br><span class="line">apt-get install kubernetes-cni</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">安装 kubelet kubeadm kubectl，并锁定其版本</span></span><br><span class="line">apt-get install -y kubelet kubeadm kubectl</span><br><span class="line">apt-mark hold kubelet kubeadm kubectl</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="容器运行时-Container-Runtime-Docker"><a href="#容器运行时-Container-Runtime-Docker" class="headerlink" title="容器运行时(Container Runtime) - Docker"></a>容器运行时(Container Runtime) - Docker</h2><h3 id="官方安装说明"><a href="#官方安装说明" class="headerlink" title="官方安装说明"></a>官方安装说明</h3><ul>
+<li>[<a target="_blank" rel="noopener" href="https://docs.docker.com/engine/install/ubuntu/">ubuntu</a>]</li>
+<li>[<a target="_blank" rel="noopener" href="https://docs.docker.com/engine/install/debian/">debian</a>]</li>
+</ul>
+<h3 id="异常问题"><a href="#异常问题" class="headerlink" title="异常问题"></a>异常问题</h3><ul>
+<li>docker info 会显示 WARNING: No swap limit support<ul>
+<li><p>vim &#x2F;etc&#x2F;default&#x2F;grub</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 给GRUB_CMDLINE_LINUX配置添加 cgroup_enable=memory swapaccount=1 参数</span><br><span class="line">GRUB_CMDLINE_LINUX=&quot;cgroup_enable=memory swapaccount=1&quot;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>更新grub，重启电脑</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">update-grub</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+<h2 id="kubeadm-创建集群"><a href="#kubeadm-创建集群" class="headerlink" title="kubeadm 创建集群"></a>kubeadm 创建集群</h2><h3 id="创建控制平面节点"><a href="#创建控制平面节点" class="headerlink" title="创建控制平面节点"></a>创建控制平面节点</h3><ul>
+<li><p>前置准备</p>
+<ul>
+<li><p>关闭交换区</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">关闭交换区</span></span><br><span class="line">swapoff -a</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">注释掉，交换区挂载</span></span><br><span class="line">sed -i &#x27;/swap/s/^/#/&#x27; /etc/fstab</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>忽略swap(不清楚为啥，总是提示不支持swap)</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &#x27;KUBELET_EXTRA_ARGS=&quot;--fail-swap-on=false&quot;&#x27; &gt; /etc/default/kubelet</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>使用kubeadm init(<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/">文档地址</a>) 创建的master节点，也可以当work节点使用，但主要功能是集群的控制面板</p>
+<ul>
+<li><p>初始化命令及参数</p>
+<p>注：kubeadm init命令的都执行了些什么 -&gt; [<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#%E6%A6%82%E8%A6%81">说明地址</a>]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init \</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">k8s版本号，默认：stable-1</span></span><br><span class="line">  --kubernetes-version [k8s版本号] \</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">国内使用aliyun镜像源，避免卡在拉镜像上</span></span><br><span class="line">  --image-repository registry.aliyuncs.com/google_containers \</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">容器子网路由区间(cidr)，这个块其实可以随便写的</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">下面cni插件我们用的是kube-flannel，它的例子配置默认是10.244.0.0/16，我们就和它保持一致</span></span><br><span class="line">  --pod-network-cidr 10.244.0.0/16</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>如果卡在了拉镜像上导致init慢或者失败</p>
+<p>查看kubeadm都使用了哪些基础镜像 -&gt; [<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-config/#cmd-config-images-list">说明地址</a>]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">kubeadm config images list</span></span><br><span class="line">k8s.gcr.io/kube-apiserver:v1.22.4</span><br><span class="line">k8s.gcr.io/kube-controller-manager:v1.22.4</span><br><span class="line">k8s.gcr.io/kube-scheduler:v1.22.4</span><br><span class="line">k8s.gcr.io/kube-proxy:v1.22.4</span><br><span class="line">k8s.gcr.io/pause:3.5</span><br><span class="line">k8s.gcr.io/etcd:3.5.0-0</span><br><span class="line">k8s.gcr.io/coredns/coredns:v1.8.4</span><br></pre></td></tr></table></figure>
+<p>可以使用阿里云镜像服务，搜索相应的镜像，提前docker pull下来 -&gt; [<a target="_blank" rel="noopener" href="https://cr.console.aliyun.com/cn-hangzhou/instances/images">服务地址</a>]</p>
+</li>
+<li><p>创建成功之后</p>
+<p>保存集群配置文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">为当前用户，创建kubectl的配置读取目录</span></span><br><span class="line">mkdir ~/.kube</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">拷贝管理员配置文件</span></span><br><span class="line">cp /etc/kubernetes/admin.conf ~/.kube/config</span><br></pre></td></tr></table></figure>
+
+<p>保存添加work节点的参数，方便后面扩展work节点</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join [ip]:[port] --token [token-val] --discovery-token-ca-cert-hash [hash-val]</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>查看kubelet日志</p>
+<ul>
+<li><p>很多问题，看kubelet错误日志，就可以很好捕获到并解决</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">journalctl -fxeu kubelet</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>异常问题 (只要出现任何报错，执行kubeadm reset重置上次的init)</p>
+<ul>
+<li><p>docker的cgroup-driver与kubelet的不一致</p>
+<p>查看各自cgroup-driver</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看docker的cgroup-driver</span></span><br><span class="line">docker info | grep &quot;Cgroup D&quot; | cut -d&quot; &quot; -f4</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看kubelet的cgroup-driver</span></span><br><span class="line">cat /var/lib/kubelet/config.yaml | grep cgroupDriver | cut -d&quot; &quot; -f2</span><br></pre></td></tr></table></figure>
+
+<p>解决办法：修改docker的cgroup-driver为systemd(假设kubelet的为systemd)</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">添加配置项 <span class="string">&quot;exec-opts&quot;</span>: [<span class="string">&quot;native.cgroupdriver=systemd&quot;</span>]</span></span><br><span class="line">vim /etc/docker/daemon.json</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">重启docker</span></span><br><span class="line">systemctl restart docker</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看docker的cgroup-driver</span></span><br><span class="line">docker info | grep &quot;Cgroup D&quot; | cut -d&quot; &quot; -f4</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+<h3 id="安装cni插件-必装-flannel"><a href="#安装cni插件-必装-flannel" class="headerlink" title="安装cni插件(必装) - flannel"></a>安装cni插件(必装) - flannel</h3><ul>
+<li><p>这个是必装的，没有容器网络插件，coredns 就会一直pending，有很多cni，我们这里选择了flannel，见[<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/concepts/cluster-administration/networking/#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0-kubernetes-%E7%9A%84%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B">更多</a>]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mkdir ~/.kube/addons</span><br><span class="line">cd ~/.kube/addons</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这个需要科学上网，才能下载</span></span><br><span class="line">curl -o kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用下载好的文件</span></span><br><span class="line">kubectl apply -f kube-flannel.yml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看flannel，运行情况</span></span><br><span class="line">kubectl get pods -n kube-system -o wide</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装失败，最好清理cni相关目录配置文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这个建议慎重清理吧，主要都是kubernetes-cni安装的，可以用 dpkg -L kubernetes-cni 查看都装了些什么</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">rm</span> -rf /opt/cni/bin/*</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">清空cni插件相关的配置文件</span></span><br><span class="line">rm -rf /etc/cni/net.d/*</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="END"><a href="#END" class="headerlink" title="END"></a>END</h2><p>到这里，基本上单个节点(master)的集群就创建好了，接下来(二)，我们安装【Web 界面(仪表盘)】- Dashboard</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://justajwolf.github.io/blog/2021/11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/" data-id="clsr7q0j20005ddqf5b1bd15p" data-title="记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="../../../12/05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)
+        
+      </div>
+    </a>
+  
+  
+    <a href="../../23/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAOpenVPN%E6%9C%8D%E5%8A%A1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">记录Ubuntu 20.04搭建OpenVPN服务</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/mongodb/">mongodb</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ubuntu/">ubuntu</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/windows/">windows</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/mongodb/" rel="tag">mongodb</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/openvpn/" rel="tag">openvpn</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/wsl/" rel="tag">wsl</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/10/">十月 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../12/07/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E5%9B%9B)%20-%20%E5%AE%89%E8%A3%85ingress%20controller/">记录Ubuntu 20.04搭建k8s集群(四) - 安装ingress controller</a>
+          </li>
+        
+          <li>
+            <a href="../../../12/06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/">记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server</a>
+          </li>
+        
+          <li>
+            <a href="../../../12/05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/">记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)</a>
+          </li>
+        
+          <li>
+            <a href="">记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群</a>
+          </li>
+        
+          <li>
+            <a href="../../23/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAOpenVPN%E6%9C%8D%E5%8A%A1/">记录Ubuntu 20.04搭建OpenVPN服务</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 CBH<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="../../../../index.html" class="mobile-nav-link">主页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a target="_blank" rel="noopener" href="https://github.com/justajwolf" class="mobile-nav-link">GitHub</a>
+  
+</nav>
+    
+
+
+<script src="../../../../js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="../../../../fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

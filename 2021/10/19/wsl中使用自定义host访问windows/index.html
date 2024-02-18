@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>wsl中使用自定义host访问windows | J·Wolf</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="话不多说，先献祭出，wsl官方文档：[-&gt;(^_^)&lt;-]，对wsl没有一个完整了解的，可以先看看官方文档，对wsl有个整体的了解。 我与wsl的那点事起初没用wsl之前，wins上装了SSR代理，一切都很和平，使用了wsl之后，在wsl之中git访问github，发现好慢，这个时候自然而然的想着去找~&#x2F;目录下的.gitconfig，给github配置一下socks5代理，这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="wsl中使用自定义host访问windows">
+<meta property="og:url" content="https://justajwolf.github.io/blog/2021/10/19/wsl%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89host%E8%AE%BF%E9%97%AEwindows/index.html">
+<meta property="og:site_name" content="J·Wolf">
+<meta property="og:description" content="话不多说，先献祭出，wsl官方文档：[-&gt;(^_^)&lt;-]，对wsl没有一个完整了解的，可以先看看官方文档，对wsl有个整体的了解。 我与wsl的那点事起初没用wsl之前，wins上装了SSR代理，一切都很和平，使用了wsl之后，在wsl之中git访问github，发现好慢，这个时候自然而然的想着去找~&#x2F;目录下的.gitconfig，给github配置一下socks5代理，这">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-10-19T11:26:31.000Z">
+<meta property="article:modified_time" content="2024-02-18T06:08:53.140Z">
+<meta property="article:author" content="CBH">
+<meta property="article:tag" content="wsl">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="../../../../favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+    
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+<img id="avatar" alt="jwolf-logo" border="2"
+        src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMAUDc8RjwyUEZBRlpVUF94yIJ4bm549a+5kcj////////////////////////////////////////////////////bAEMBVVpaeGl464KC6//////////////////////////////////////////////////////////////////////////AABEIAZABkAMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAAAAQIDBAX/xAAwEAEBAAECBQIGAQQCAwEAAAAAAQIDERIhMUFRBGETIlJxgZEyFCNCoTNiNJLRsf/EABYBAQEBAAAAAAAAAAAAAAAAAAABAv/EABcRAQEBAQAAAAAAAAAAAAAAAAARASH/2gAMAwEAAhEDEQA/AM1it1igzWa1WaCAAEFgCKgIioAgAAAAAAAAAAAA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"
+      >
+      <h1 id="logo-wrap">
+        <a href="../../../../index.html" id="logo">J·Wolf</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="../../../../index.html">主页</a>
+        
+          <a class="main-nav-link" href="../../../../archives">归档</a>
+        
+          <a class="main-nav-link" target="_blank" rel="noopener" href="https://github.com/justajwolf">GitHub</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://justajwolf.github.io/blog"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-wsl中使用自定义host访问windows" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time class="dt-published" datetime="2021-10-19T11:26:31.000Z" itemprop="datePublished">2021-10-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/ubuntu/">ubuntu</a>/<a class="article-category-link" href="../../../../categories/windows/">windows</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      wsl中使用自定义host访问windows
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>话不多说，先献祭出，wsl官方文档：[<a target="_blank" rel="noopener" href="https://docs.microsoft.com/zh-cn/windows/wsl/">-&gt;(<em>^_^</em>)&lt;-</a>]，对wsl没有一个完整了解的，可以先看看官方文档，对wsl有个整体的了解。</p>
+<h2 id="我与wsl的那点事"><a href="#我与wsl的那点事" class="headerlink" title="我与wsl的那点事"></a>我与wsl的那点事</h2><p>起初没用wsl之前，wins上装了SSR代理，一切都很和平，使用了wsl之后，在wsl之中git访问github，发现好慢，这个时候自然而然的想着去找~&#x2F;目录下的.gitconfig，给github配置一下socks5代理，这个时候问题就来了，wins的ip从哪来？</p>
+<h2 id="探坑过程"><a href="#探坑过程" class="headerlink" title="探坑过程"></a>探坑过程</h2><p>大概整理情况如下：</p>
+<ul>
+<li>wsl和wins，是通过一个叫做 vEthernet(WSL) 的虚拟网络适配器，建立的局域网进行通信的。</li>
+<li>理论上我们只需要，获取到 wins 在这个网络中的 ip，在wsl中写死就可以了，但是搞人的事情就发生了。。。</li>
+<li>每次开机这个 vEthernet(WSL) 都会被重新创建，貌似是关机的时候会删掉，导致 我们上面拿到的ip是一直变的，他不是固定的，只要关开机，就一定会变</li>
+<li>查询<a target="_blank" rel="noopener" href="https://docs.microsoft.com/zh-cn/windows/wsl/networking#accessing-windows-networking-apps-from-linux-host-ip">wsl官方文档</a>, 可以同过查询&#x2F;etc&#x2F;resolv.conf的nameserver，来确定wins ip</li>
+</ul>
+<p>找到这，基本上就已经结果很明朗了。</p>
+<p>思路如下:</p>
+<ul>
+<li>直接搞一个查询当前wins ip并更新到&#x2F;etc&#x2F;hosts中的脚本</li>
+<li>每次进入shell的时候，自动执行</li>
+<li>这样我们在wsl直接使用 自定义域名(这块我叫的是winhost)就行了。</li>
+</ul>
+<p>接下来，就开搞开搞~~~</p>
+<h2 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h2><h3 id="给-etc-hosts-加上写权限"><a href="#给-etc-hosts-加上写权限" class="headerlink" title="给&#x2F;etc&#x2F;hosts 加上写权限"></a>给&#x2F;etc&#x2F;hosts 加上写权限</h3><ul>
+<li>因为需要修改&#x2F;etc&#x2F;hosts，这个是我觉得不太好的地方，但是就是想映射自定义host, 暂时没想到别的办法<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> a+w /etc/hosts</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="获取wins-ip并写入或更新-etc-hosts"><a href="#获取wins-ip并写入或更新-etc-hosts" class="headerlink" title="获取wins ip并写入或更新&#x2F;etc&#x2F;hosts"></a>获取wins ip并写入或更新&#x2F;etc&#x2F;hosts</h3><ul>
+<li><p>来到~&#x2F;目录下，为了方便以后复制，新建一个.bash_config.sh文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~</span><br><span class="line">$ vim .bash_config.sh</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>贴入如下代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 自定义的host</span></span><br><span class="line">winhost=<span class="string">&quot;winhost&quot;</span></span><br><span class="line">hostmap=$(<span class="built_in">echo</span> $(ip route | grep default | awk <span class="string">&#x27;&#123;print $3&#125;&#x27;</span>) <span class="variable">$winhost</span>)</span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$hostmap</span></span><br><span class="line">content=$(<span class="built_in">cat</span> /etc/hosts | grep <span class="variable">$winhost</span>)</span><br><span class="line"><span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$content</span>&quot;</span> ]</span><br><span class="line"><span class="keyword">then</span></span><br><span class="line">  <span class="built_in">cat</span> /etc/hosts &gt; /tmp/tmpwinhost</span><br><span class="line">  sed -i <span class="string">&quot;s/<span class="variable">$content</span>/<span class="variable">$hostmap</span>/g&quot;</span> /tmp/tmpwinhost</span><br><span class="line">  <span class="built_in">cat</span> /tmp/tmpwinhost &gt; /etc/hosts</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">  <span class="built_in">echo</span> -e <span class="string">&quot;\n<span class="variable">$hostmap</span>&quot;</span> &gt;&gt; /etc/hosts</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>给.bash_config.sh文件上 执行权限:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">chmod</span> +x ~/.bash_config.sh</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="每次进入shell，自动执行-bash-config-sh"><a href="#每次进入shell，自动执行-bash-config-sh" class="headerlink" title="每次进入shell，自动执行 ~&#x2F;.bash_config.sh"></a>每次进入shell，自动执行 ~&#x2F;.bash_config.sh</h3><ul>
+<li>将.bash_config.sh 放到 .bashrc中，每次登录shell都自动更新wins的ip到 &#x2F;etc&#x2F;hosts<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> -e <span class="string">&quot;\n\. ~/.bash_config.sh&quot;</span> &gt;&gt; ~/.bashrc</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="END"><a href="#END" class="headerlink" title="END"></a>END</h2><p>最终的目的算是实现了，给wsl本地添加一个自定义域名：winhost，动态的更新wsl本地hosts文件中ip映射，对于wsl来说，只需要使用域名winhost就行，肯定有人问，为啥不放到wsl开机启动上来更新host，主要是每次远程ssh的时候用，就没有那么整，完美一点就是弄一个开机启动脚本，不过不重要，有需要再说，😄。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://justajwolf.github.io/blog/2021/10/19/wsl%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89host%E8%AE%BF%E9%97%AEwindows/" data-id="clsr7q0iu0000ddqf4677ewg9" data-title="wsl中使用自定义host访问windows" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/wsl/" rel="tag">wsl</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="../../../11/18/%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8mongosh/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          安装使用mongosh
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/mongodb/">mongodb</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ubuntu/">ubuntu</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/windows/">windows</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/mongodb/" rel="tag">mongodb</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/openvpn/" rel="tag">openvpn</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/wsl/" rel="tag">wsl</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/10/">十月 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../12/07/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E5%9B%9B)%20-%20%E5%AE%89%E8%A3%85ingress%20controller/">记录Ubuntu 20.04搭建k8s集群(四) - 安装ingress controller</a>
+          </li>
+        
+          <li>
+            <a href="../../../12/06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/">记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server</a>
+          </li>
+        
+          <li>
+            <a href="../../../12/05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/">记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/">记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/23/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAOpenVPN%E6%9C%8D%E5%8A%A1/">记录Ubuntu 20.04搭建OpenVPN服务</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 CBH<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="../../../../index.html" class="mobile-nav-link">主页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a target="_blank" rel="noopener" href="https://github.com/justajwolf" class="mobile-nav-link">GitHub</a>
+  
+</nav>
+    
+
+
+<script src="../../../../js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="../../../../fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

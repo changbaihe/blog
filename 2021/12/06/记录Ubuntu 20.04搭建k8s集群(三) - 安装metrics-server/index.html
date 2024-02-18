@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server | J·Wolf</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="这次变了😄，文档下面详说下，强调一下当前背景：  这是基于之前的搭建情况下进行的，条件有限，我们当前使用的是单节点集群(只有一个master，既当控制面又当工作节点)。  我与Metrics Server的那点事 本来是不想先整metrics的，dashboard弄好了，本来挺舒服的，又去dashboard仓库转了一圈，看到了下面这张图，然后就发现，我的CPU Usage 和Memory Us">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server">
+<meta property="og:url" content="https://justajwolf.github.io/blog/2021/12/06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/index.html">
+<meta property="og:site_name" content="J·Wolf">
+<meta property="og:description" content="这次变了😄，文档下面详说下，强调一下当前背景：  这是基于之前的搭建情况下进行的，条件有限，我们当前使用的是单节点集群(只有一个master，既当控制面又当工作节点)。  我与Metrics Server的那点事 本来是不想先整metrics的，dashboard弄好了，本来挺舒服的，又去dashboard仓库转了一圈，看到了下面这张图，然后就发现，我的CPU Usage 和Memory Us">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://justajwolf.github.io/images/k8s/dashboard-sample.jpg">
+<meta property="article:published_time" content="2021-12-06T03:50:34.000Z">
+<meta property="article:modified_time" content="2024-02-18T06:08:53.140Z">
+<meta property="article:author" content="CBH">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://justajwolf.github.io/images/k8s/dashboard-sample.jpg">
+  
+  
+    <link rel="shortcut icon" href="../../../../favicon.png">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+    
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+<img id="avatar" alt="jwolf-logo" border="2"
+        src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYAAAAAAIQAABtbnRyUkdCIFhZWiAAAAAAAAAAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAAHRyWFlaAAABZAAAABRnWFlaAAABeAAAABRiWFlaAAABjAAAABRyVFJDAAABoAAAAChnVFJDAAABoAAAAChiVFJDAAABoAAAACh3dHB0AAAByAAAABRjcHJ0AAAB3AAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAFgAAAAcAHMAUgBHAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z3BhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABYWVogAAAAAAAA9tYAAQAAAADTLW1sdWMAAAAAAAAAAQAAAAxlblVTAAAAIAAAABwARwBvAG8AZwBsAGUAIABJAG4AYwAuACAAMgAwADEANv/bAEMAUDc8RjwyUEZBRlpVUF94yIJ4bm549a+5kcj////////////////////////////////////////////////////bAEMBVVpaeGl464KC6//////////////////////////////////////////////////////////////////////////AABEIAZABkAMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAAAAQIDBAX/xAAwEAEBAAECBQIGAQQCAwEAAAAAAQIDERIhMUFRBGETIlJxgZEyFCNCoTNiNJLRsf/EABYBAQEBAAAAAAAAAAAAAAAAAAABAv/EABcRAQEBAQAAAAAAAAAAAAAAAAARASH/2gAMAwEAAhEDEQA/AM1it1igzWa1WaCAAEFgCKgIioAgAAAAAAAAAAAA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"
+      >
+      <h1 id="logo-wrap">
+        <a href="../../../../index.html" id="logo">J·Wolf</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="../../../../index.html">主页</a>
+        
+          <a class="main-nav-link" href="../../../../archives">归档</a>
+        
+          <a class="main-nav-link" target="_blank" rel="noopener" href="https://github.com/justajwolf">GitHub</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://justajwolf.github.io/blog"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time class="dt-published" datetime="2021-12-06T03:50:34.000Z" itemprop="datePublished">2021-12-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/k8s/">k8s</a>/<a class="article-category-link" href="../../../../categories/ubuntu/">ubuntu</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p> 这次变了😄，文档下面详说下，强调一下当前背景：</p>
+<ul>
+<li>这是基于之前的搭建情况下进行的，条件有限，我们当前使用的是单节点集群(只有一个master，既当控制面又当工作节点)。</li>
+</ul>
+<h2 id="我与Metrics-Server的那点事"><a href="#我与Metrics-Server的那点事" class="headerlink" title="我与Metrics Server的那点事"></a>我与Metrics Server的那点事</h2><ul>
+<li><p>本来是不想先整metrics的，dashboard弄好了，本来挺舒服的，又去dashboard仓库转了一圈，看到了下面这张图，然后就发现，我的CPU Usage 和Memory Usage呢？？？</p>
+<p><img src="/images/k8s/dashboard-sample.jpg"></p>
+</li>
+<li><p>然后Google一下，，，有人说是Metrics API有问题，就去看了一下，dashboard-metrics-scraper日志，果然。。。k8s自己本身api server 不提供Metrics数据指标整合接口实现。。。kubectl top 命令也是显示<code> error: metrics not available yet</code>。。</p>
+</li>
+<li><p>没办法，那整一下Metrics Server吧😔</p>
+</li>
+</ul>
+<h2 id="仔细分析一波文档"><a href="#仔细分析一波文档" class="headerlink" title="仔细分析一波文档"></a>仔细分析一波文档</h2><ul>
+<li><p>k8s官方文档中Metrics API 相关介绍，<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/tasks/debug-application-cluster/resource-metrics-pipeline/">详见</a></p>
+<ul>
+<li><p>API Server没有提供Metrics API的具体实现，k8s只提供了一套API定义供相关第三方工具去自己实现相关指标整合，并将Metrics接口服务注册到API Server。</p>
+</li>
+<li><p>实现Metrics API的指标采集工具，目前我了解到的是下面这俩：</p>
+<ul>
+<li><p>Prometheus：这个之前有使用过，搭配Alertmanager和Grafana，做服务预警和指标监控，就感觉挺爽。</p>
+</li>
+<li><p>Metrics Server：这个看文档说的好像是没有Prometheus专业，也不推荐Prometheus直接使用它的指标数据，因为它的数据是实时的没有提供持久化(这里我就理解它为轻量一点吧😄)。</p>
+</li>
+</ul>
+</li>
+<li><p>为了让dashboard能采集到node和pod的相关指标，以及kubectl top可以使用，就怎么简单怎么来，选择Metrics server作为Metrics API实现server。</p>
+</li>
+</ul>
+</li>
+<li><p>Metrics Server仓库地址 [<a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/metrics-server">-&gt;戳这&lt;-</a>]，下面我们来简述一下，对我们有用的文档内容：</p>
+<ul>
+<li><p>安装前置条件</p>
+<ul>
+<li><p>Metrics Server到API server的网络是可以访问的。</p>
+</li>
+<li><p>k8s API Server是开启聚合层配置的，<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/tasks/extend-kubernetes/configure-aggregation-layer/">详见</a>。</p>
+<ul>
+<li>这块主要是双向鉴权相关的内容(即从client request &#x3D;&gt; api server &#x3D;&gt; metrics server之间的双向鉴权)。</li>
+</ul>
+</li>
+<li><p>需要开启Kubelet 认证&#x2F;鉴权，<a target="_blank" rel="noopener" href="https://kubernetes.io/zh/docs/reference/command-line-tools-reference/kubelet-authentication-authorization/">详见</a>，这个应该创建集群的时候，不特殊指定，默认开启的：</p>
+<ul>
+<li><p>这块主要是 metrics server &#x3D;&gt; kubelet 提供的指标采集api 之间的鉴权。</p>
+</li>
+<li><p>kubelet默认工作目录：&#x2F;var&#x2F;lib&#x2F;kubelet</p>
+</li>
+<li><p>查看配置文件&#x2F;var&#x2F;lib&#x2F;kubelet&#x2F;config.yaml，可见webhook是开启的，并且使用的x509认证，证书就是集群自签的ca.crt</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">有点长，这里之查看前15行内容</span></span><br><span class="line">head --line 15 config.yaml</span><br><span class="line">apiVersion: kubelet.config.k8s.io/v1beta1</span><br><span class="line">authentication:</span><br><span class="line">  anonymous:</span><br><span class="line">    enabled: false</span><br><span class="line">  webhook:</span><br><span class="line">    cacheTTL: 0s</span><br><span class="line">    enabled: true</span><br><span class="line">  x509:</span><br><span class="line">    clientCAFile: /etc/kubernetes/pki/ca.crt</span><br><span class="line">authorization:</span><br><span class="line">  mode: Webhook</span><br><span class="line">  webhook:</span><br><span class="line">    cacheAuthorizedTTL: 0s</span><br><span class="line">    cacheUnauthorizedTTL: 0s</span><br><span class="line">cgroupDriver: systemd</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>kubelet使用的ca需要是集群的ca，这个确实是集群的ca，上面的clientCAFile: &#x2F;etc&#x2F;kubernetes&#x2F;pki&#x2F;ca.crt就是集群的ca，</p>
+<ul>
+<li>自签的这个证书上并没有绑定具体的node ip，就会产生x509校验不过问题。</li>
+<li>最简单的办法，在启动Metrics Server容器时使用–kubelet-insecure-tls，使用不安全的tls访问kubelet的指标接口。</li>
+<li>这个x509校验要是不过，Metrics Server是没办法注册到API Server的。</li>
+</ul>
+</li>
+<li><p>容器运行时，需要实现<a target="_blank" rel="noopener" href="https://github.com/kubernetes/community/blob/master/contributors/devel/sig-node/cri-container-stats.md">Container Metrics RPCs</a> ，我们使用的是Docker，这个具体没有去研究，也是有一套API，Docker肯定是实现了，不然kubelet也不可能采集到Pod的数据</p>
+<ul>
+<li>这个主要是kubelet去采集当前node上的各个pod的指标数据</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>容器启动参数</p>
+<ul>
+<li>–kubelet-preferred-address-types：访问节点地址，优先使用顺序，默认：[Hostname, InternalDNS, InternalIP, ExternalDNS, ExternalIP]</li>
+<li>–kubelet-insecure-tls：这个就是上面说的，可以不校验ca，文档上说仅对测试目的这么用，但是自己学习环境，也差不多。</li>
+<li>–requestheader-client-ca-file：指定一个根证书文件，用于发起请求的客户端(也就是Metrics Server)的验证。</li>
+</ul>
+</li>
+<li><p>提供helm安装和yaml文件直接安装，下面我们使用yaml文件安装</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="开始安装"><a href="#开始安装" class="headerlink" title="开始安装"></a>开始安装</h2><ul>
+<li><p>下载yaml文件, 这块文档提供的github地址不是最终文件地址，需要重定向跳转，没办法使用jsdelivr转换地址，只能科学上了。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">切换目录到自定义的插件目录</span></span><br><span class="line">cd ~/.kube/addons</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">科学上网下载</span></span><br><span class="line">curl -o metrics-server.yaml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml -L</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">修改一下metrics-server.yaml文件加上--kubelet-insecure-tls参数</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建metrics-server相关负载</span></span><br><span class="line">kubectl apply -f metrics-server.yaml</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看deployment状态</span></span><br><span class="line">kctl -n kube-system get deployment.apps/metrics-server</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="END"><a href="#END" class="headerlink" title="END"></a>END</h2><p>Metrics Server安装完了，再去dashboard上看看，CPU usage 和 Memory usage有了，还有需要注意得一个地方，访问dashboard的&#x2F;overview路径是对应的上面的那个例图，我的Dashboard v2.4.0+0.ge75ebcf68，点击logo跳转的是&#x2F;workloads，不是&#x2F;overview。。。。反正是访问&#x2F;overview就和上面那个例图一样了。。😄</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://justajwolf.github.io/blog/2021/12/06/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%89)%20-%20%E5%AE%89%E8%A3%85metrics-server/" data-id="clsr7q0j30006ddqf1mt37prj" data-title="记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="../../07/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E5%9B%9B)%20-%20%E5%AE%89%E8%A3%85ingress%20controller/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          记录Ubuntu 20.04搭建k8s集群(四) - 安装ingress controller
+        
+      </div>
+    </a>
+  
+  
+    <a href="../../05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/mongodb/">mongodb</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/ubuntu/">ubuntu</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/windows/">windows</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/mongodb/" rel="tag">mongodb</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/openvpn/" rel="tag">openvpn</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/wsl/" rel="tag">wsl</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/10/">十月 2021</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../07/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E5%9B%9B)%20-%20%E5%AE%89%E8%A3%85ingress%20controller/">记录Ubuntu 20.04搭建k8s集群(四) - 安装ingress controller</a>
+          </li>
+        
+          <li>
+            <a href="">记录Ubuntu 20.04搭建k8s集群(三) - 安装metrics-server</a>
+          </li>
+        
+          <li>
+            <a href="../../05/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%BA%8C)%20-%20Web%E7%95%8C%E9%9D%A2%E4%BB%AA%E8%A1%A8%E7%9B%98(Dashboard)/">记录Ubuntu 20.04搭建k8s集群(二) - Web界面仪表盘(Dashboard)</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/29/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAk8s%E9%9B%86%E7%BE%A4(%E4%B8%80)%20-%20%E4%BD%BF%E7%94%A8kubeadm%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4/">记录Ubuntu 20.04搭建k8s集群(一) - 使用kubeadm创建集群</a>
+          </li>
+        
+          <li>
+            <a href="../../../11/23/%E8%AE%B0%E5%BD%95Ubuntu%2020.04%E6%90%AD%E5%BB%BAOpenVPN%E6%9C%8D%E5%8A%A1/">记录Ubuntu 20.04搭建OpenVPN服务</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 CBH<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="../../../../index.html" class="mobile-nav-link">主页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a target="_blank" rel="noopener" href="https://github.com/justajwolf" class="mobile-nav-link">GitHub</a>
+  
+</nav>
+    
+
+
+<script src="../../../../js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="../../../../fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

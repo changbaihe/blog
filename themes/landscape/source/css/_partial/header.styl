@@ -48,7 +48,7 @@
 
 $logo-text
   text-decoration: none
-  color: #ffffff
+  color: #fff
   font-weight: 300
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3)
 
@@ -85,7 +85,6 @@ $nav-link
 
 .nav-icon
   @extend $nav-link
-  font-family: font-icon
   text-align: center
   font-size: font-size
   width: font-size
@@ -103,22 +102,12 @@ $nav-link
 
 #main-nav-toggle
   display: none
-  &:before
-    content: "\f0c9"
   @media mq-mobile
     display: block
 
 #sub-nav
   float: right
   margin-right: -15px
-
-#nav-rss-link
-  &:before
-    content: "\f09e"
-
-#nav-search-btn
-  &:before
-    content: "\f002"
 
 #search-form-wrap
   position: absolute
